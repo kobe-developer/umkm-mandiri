@@ -43,11 +43,20 @@
         activeCategory = categories[0]?.id ?? null;
     });
 
+    /** Selama scroll hasil klik tab, observer tidak boleh mengganti tab aktif. */
+    const PROGRAMMATIC_SCROLL_MS = 1000;
+    let programmaticScrollUntil = 0;
+    let stickyBar = $state();
+
+    const isProgrammaticScroll = () => Date.now() < programmaticScrollUntil;
+    const scrollBehavior = () => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
+
     // Tandai tab kategori yang sedang terlihat saat scroll
     $effect(() => {
         if (step !== 'menu' || sections.length === 0) return;
         const observer = new IntersectionObserver(
             (entries) => {
+                if (isProgrammaticScroll()) return;
                 const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
                 if (visible) activeCategory = Number(visible.target.dataset.category);
             },
@@ -57,6 +66,19 @@
         return () => observer.disconnect();
     });
 
+    // Geser strip tab agar tab aktif di tengah. Hanya menggulir <nav> (bukan halaman), dan
+    // tanpa animasi saat halaman sedang di-scroll oleh klik tab: di iOS Safari dua smooth
+    // scroll yang berjalan bersamaan saling membatalkan sehingga halaman tidak sampai.
+    $effect(() => {
+        if (step !== 'menu' || activeCategory === null) return;
+        const tab = document.getElementById(`tab-${activeCategory}`);
+        const nav = tab?.parentElement;
+        if (!tab || !nav) return;
+        const offset = tab.getBoundingClientRect().left - nav.getBoundingClientRect().left;
+        const left = nav.scrollLeft + offset - (nav.clientWidth - tab.offsetWidth) / 2;
+        nav.scrollTo({ left: Math.max(0, left), behavior: isProgrammaticScroll() ? 'auto' : scrollBehavior() });
+    });
+
     async function goTo(next) {
         step = next;
         await tick();
@@ -64,9 +86,13 @@
     }
 
     function scrollToCategory(id) {
+        const section = document.getElementById(`kategori-${id}`);
+        if (!section) return;
+        programmaticScrollUntil = Date.now() + PROGRAMMATIC_SCROLL_MS;
         activeCategory = id;
-        document.getElementById(`kategori-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        document.getElementById(`tab-${id}`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        // Satu-satunya scroll halaman: posisi section dikurangi tinggi bar sticky
+        const top = section.getBoundingClientRect().top + window.scrollY - (stickyBar?.offsetHeight ?? 0);
+        window.scrollTo({ top: Math.max(0, top), behavior: scrollBehavior() });
     }
 </script>
 
@@ -92,7 +118,7 @@
             </div>
         {/if}
 
-        <div class="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur-xl">
+        <div bind:this={stickyBar} class="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur-xl">
             <div class="mx-auto max-w-2xl px-5 pt-3">
                 <label class="relative block">
                     <span class="sr-only">Cari menu</span>
@@ -129,7 +155,7 @@
             {/if}
 
             {#each sections as section (section.id)}
-                <section id="kategori-{section.id}" data-category={section.id} class="scroll-mt-36 pt-6" aria-labelledby="judul-{section.id}">
+                <section id="kategori-{section.id}" data-category={section.id} class="pt-6" aria-labelledby="judul-{section.id}">
                     <div class="flex items-baseline justify-between gap-3">
                         <h2 id="judul-{section.id}" class="display text-2xl text-ink">{section.name}</h2>
                         <span class="num text-xs text-faint">{section.products.length} menu</span>
