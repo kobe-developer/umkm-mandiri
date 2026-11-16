@@ -28,11 +28,11 @@
 </script>
 
 <div class="flex flex-wrap items-center gap-2">
-    <div class="flex flex-wrap gap-1 rounded-xl bg-stone-100 p-1">
+    <div class="segmented scroll-x max-w-full">
         {#each presets as preset (preset)}
             <button
                 type="button"
-                class="rounded-lg px-3 py-1.5 text-sm font-medium {period.preset === preset || (preset === 'custom' && showCustom) ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'}"
+                class="segment shrink-0 {period.preset === preset || (preset === 'custom' && showCustom) ? 'segment-active' : ''}"
                 onclick={() => go(preset)}
             >
                 {LABELS[preset]}
@@ -41,10 +41,10 @@
     </div>
     {#if showCustom}
         <form class="flex flex-wrap items-center gap-2" onsubmit={applyCustom}>
-            <input type="date" class="input w-auto py-1.5" bind:value={from} max={to} required aria-label="Dari tanggal" />
-            <span class="text-stone-400">–</span>
-            <input type="date" class="input w-auto py-1.5" bind:value={to} min={from} required aria-label="Sampai tanggal" />
-            <button class="btn-primary btn-sm" type="submit">Terapkan</button>
+            <input type="date" class="input w-auto" bind:value={from} max={to} required aria-label="Dari tanggal" />
+            <span class="text-faint">–</span>
+            <input type="date" class="input w-auto" bind:value={to} min={from} required aria-label="Sampai tanggal" />
+            <button class="btn-primary" type="submit">Terapkan</button>
         </form>
     {/if}
 </div>

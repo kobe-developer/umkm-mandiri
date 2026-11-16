@@ -28,14 +28,18 @@
     }
 </script>
 
-<Modal bind:open title="Tandai pembayaran · {rupiah(order.total)}">
+<Modal bind:open title="Tandai pembayaran">
     <div class="space-y-4">
+        <div class="flex items-baseline justify-between rounded-2xl bg-paper px-4 py-3">
+            <span class="text-sm text-muted">Total tagihan</span>
+            <span class="num text-2xl font-semibold tracking-tight text-ink">{rupiah(order.total)}</span>
+        </div>
         <ErrorSummary errors={form.errors} />
         <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {#each methods as method (method.id)}
                 <button
                     type="button"
-                    class="rounded-xl border px-2 py-2.5 text-sm font-semibold {form.payment_method_id === method.id ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-stone-200'}"
+                    class="min-h-12 rounded-xl border px-2 text-sm font-semibold transition {form.payment_method_id === method.id ? 'border-ink bg-ink text-paper' : 'border-line bg-surface text-ink-soft hover:border-line-strong'}"
                     onclick={() => (form.payment_method_id = method.id)}
                 >{method.name}</button>
             {/each}

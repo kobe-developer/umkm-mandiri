@@ -15,11 +15,11 @@
 
 <svelte:head><title>{message[0]}</title></svelte:head>
 
-<div class="flex min-h-screen flex-col items-center justify-center px-4 text-center">
-    <p class="text-6xl font-black text-brand-600">{status}</p>
-    <h1 class="mt-2 text-xl font-bold">{message[0]}</h1>
-    <p class="mt-1 text-stone-500">{message[1]}</p>
-    <div class="mt-6 flex gap-2">
+<div class="flex min-h-dvh flex-col items-center justify-center bg-paper px-6 text-center">
+    <p class="display text-[5.5rem] leading-none text-brand-600">{status}</p>
+    <h1 class="display mt-4 text-2xl text-ink">{message[0]}</h1>
+    <p class="mt-2 max-w-xs text-muted">{message[1]}</p>
+    <div class="mt-8 flex w-full max-w-xs flex-col gap-2 sm:max-w-none sm:flex-row sm:justify-center">
         <a href="/menu" class="btn-secondary">Menu online</a>
         <a href="/login" class="btn-primary">Ke aplikasi</a>
     </div>

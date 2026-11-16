@@ -44,20 +44,20 @@
 <Modal bind:open title="Ubah item order" size="lg">
     <div class="space-y-3">
         <ErrorSummary errors={form.errors} />
-        <ul class="divide-y divide-stone-100">
+        <ul class="divide-y divide-line">
             {#each items as item (item.product_id)}
                 {@const product = productById[item.product_id]}
-                <li class="py-2">
+                <li class="py-3">
                     <div class="flex items-center gap-2">
                         <div class="min-w-0 flex-1">
-                            <p class="text-sm font-semibold">{item.name}</p>
-                            <p class="text-xs {!product || product.is_sold_out ? 'font-semibold text-red-600' : 'text-stone-500'}">
+                            <p class="text-sm font-semibold text-ink">{item.name}</p>
+                            <p class="text-xs {!product || product.is_sold_out ? 'font-semibold text-brand-600' : 'num text-muted'}">
                                 {!product ? 'Tidak tersedia online' : product.is_sold_out ? 'Habis — hapus atau ganti' : rupiah(product.price)}
                             </p>
                         </div>
                         <QtyStepper size="sm" value={item.quantity} onchange={(q) => setQty(item.product_id, q)} />
                     </div>
-                    <input class="input mt-1 py-1.5 text-xs" placeholder="Catatan" maxlength="100" bind:value={item.notes} aria-label="Catatan {item.name}" />
+                    <input class="input mt-2" placeholder="Catatan" maxlength="100" bind:value={item.notes} aria-label="Catatan {item.name}" />
                 </li>
             {/each}
         </ul>
@@ -68,7 +68,10 @@
             </select>
             <button type="button" class="btn-secondary" disabled={!addId} onclick={addProduct}>Tambah</button>
         </div>
-        <p class="text-right font-bold">Total baru: {rupiah(total)}</p>
+        <div class="flex items-baseline justify-between rounded-2xl bg-paper px-4 py-3">
+            <span class="text-sm text-muted">Total baru</span>
+            <span class="num text-xl font-semibold text-ink">{rupiah(total)}</span>
+        </div>
     </div>
     {#snippet footer()}
         <button type="button" class="btn-secondary" onclick={() => (open = false)}>Batal</button>

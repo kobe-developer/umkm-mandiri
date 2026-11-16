@@ -1,6 +1,8 @@
 <script>
     import { router } from '@inertiajs/svelte';
     import { untrack } from 'svelte';
+    import ChevronDown from '@lucide/svelte/icons/chevron-down';
+    import ScrollText from '@lucide/svelte/icons/scroll-text';
     import PageHeader from '../../components/PageHeader.svelte';
     import Pagination from '../../components/Pagination.svelte';
     import EmptyState from '../../components/EmptyState.svelte';
@@ -36,53 +38,83 @@
 
 <PageHeader title="Log Aktivitas" subtitle="Siapa mengubah apa dan kapan" />
 
-<div class="mb-4 flex flex-wrap gap-2">
-    <select class="input w-auto" bind:value={userId} onchange={apply} aria-label="User">
+<div class="mb-6 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+    <select class="input sm:w-auto" bind:value={userId} onchange={apply} aria-label="User">
         <option value="">Semua user</option>
         {#each users as user (user.id)}<option value={String(user.id)}>{user.name}</option>{/each}
     </select>
-    <select class="input w-auto" bind:value={subjectType} onchange={apply} aria-label="Entitas">
+    <select class="input sm:w-auto" bind:value={subjectType} onchange={apply} aria-label="Entitas">
         <option value="">Semua entitas</option>
         {#each subjectTypes as type (type)}<option value={type}>{type}</option>{/each}
     </select>
 </div>
 
+{#snippet detail(log)}
+    <div class="grid gap-3 sm:grid-cols-2">
+        <div class="min-w-0">
+            <p class="mb-1 text-xs font-medium text-muted">Sebelum</p>
+            <pre class="overflow-x-auto rounded-xl border border-line bg-surface p-3 text-xs leading-relaxed text-ink-soft">{pretty(log.before)}</pre>
+        </div>
+        <div class="min-w-0">
+            <p class="mb-1 text-xs font-medium text-muted">Sesudah</p>
+            <pre class="overflow-x-auto rounded-xl border border-line bg-surface p-3 text-xs leading-relaxed text-ink-soft">{pretty(log.after)}</pre>
+        </div>
+    </div>
+{/snippet}
+
+{#snippet toggleButton(log)}
+    <button type="button" class="btn-ghost btn-sm" onclick={() => toggle(log.id)} aria-expanded={!!expanded[log.id]}>
+        {expanded[log.id] ? 'Tutup' : 'Detail'}
+        <ChevronDown size={14} class="transition-transform {expanded[log.id] ? 'rotate-180' : ''}" />
+    </button>
+{/snippet}
+
+{#snippet actionBadge(action)}
+    <span class="inline-flex rounded-full bg-paper-deep px-2.5 py-0.5 text-xs font-semibold text-ink-soft">{action}</span>
+{/snippet}
+
 {#if logs.data.length === 0}
-    <EmptyState title="Belum ada aktivitas" />
+    <EmptyState icon={ScrollText} title="Belum ada aktivitas" />
 {:else}
-    <div class="card overflow-x-auto">
-        <table class="table min-w-[760px]">
+    <!-- Mobile & tablet: linimasa ringkas -->
+    <ul class="card divide-y divide-line xl:hidden">
+        {#each logs.data as log (log.id)}
+            <li class="p-4">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            {@render actionBadge(log.action)}
+                            <span class="text-sm text-ink-soft">{log.subject_type}{#if log.subject_id}<span class="num text-faint"> #{log.subject_id}</span>{/if}</span>
+                        </div>
+                        {#if log.description}<p class="mt-1.5 text-sm text-ink">{log.description}</p>{/if}
+                        <p class="mt-1 text-xs text-muted">{log.user?.name ?? 'Sistem'} · {dateTime(log.created_at)}</p>
+                    </div>
+                    {#if hasDetail(log)}<div class="-mr-2 shrink-0">{@render toggleButton(log)}</div>{/if}
+                </div>
+                {#if expanded[log.id]}<div class="mt-3 rounded-xl bg-paper p-3">{@render detail(log)}</div>{/if}
+            </li>
+        {/each}
+    </ul>
+
+    <!-- Layar lebar: tabel -->
+    <div class="card hidden overflow-x-auto xl:block">
+        <table class="table">
             <thead><tr><th>Waktu</th><th>User</th><th>Aksi</th><th>Entitas</th><th>Keterangan</th><th></th></tr></thead>
             <tbody>
                 {#each logs.data as log (log.id)}
                     <tr>
-                        <td class="whitespace-nowrap">{dateTime(log.created_at)}</td>
+                        <td class="whitespace-nowrap text-ink-soft">{dateTime(log.created_at)}</td>
                         <td>{log.user?.name ?? 'Sistem'}</td>
-                        <td><span class="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-700">{log.action}</span></td>
-                        <td class="whitespace-nowrap">{log.subject_type}{#if log.subject_id}<span class="text-stone-400"> #{log.subject_id}</span>{/if}</td>
-                        <td class="text-stone-700">{log.description ?? '-'}</td>
-                        <td class="text-right">
-                            {#if hasDetail(log)}
-                                <button type="button" class="btn-ghost btn-sm" onclick={() => toggle(log.id)} aria-expanded={!!expanded[log.id]}>
-                                    {expanded[log.id] ? 'Tutup' : 'Detail'}
-                                </button>
-                            {/if}
+                        <td>{@render actionBadge(log.action)}</td>
+                        <td class="whitespace-nowrap">{log.subject_type}{#if log.subject_id}<span class="num text-faint"> #{log.subject_id}</span>{/if}</td>
+                        <td class="text-ink-soft">{log.description ?? '-'}</td>
+                        <td class="py-1.5 text-right">
+                            {#if hasDetail(log)}{@render toggleButton(log)}{/if}
                         </td>
                     </tr>
                     {#if expanded[log.id]}
                         <tr>
-                            <td colspan="6" class="bg-stone-50">
-                                <div class="grid gap-3 sm:grid-cols-2">
-                                    <div>
-                                        <p class="mb-1 text-xs font-semibold text-stone-500 uppercase">Sebelum</p>
-                                        <pre class="overflow-x-auto rounded-lg bg-white p-2 text-xs ring-1 ring-stone-200">{pretty(log.before)}</pre>
-                                    </div>
-                                    <div>
-                                        <p class="mb-1 text-xs font-semibold text-stone-500 uppercase">Sesudah</p>
-                                        <pre class="overflow-x-auto rounded-lg bg-white p-2 text-xs ring-1 ring-stone-200">{pretty(log.after)}</pre>
-                                    </div>
-                                </div>
-                            </td>
+                            <td colspan="6" class="bg-paper">{@render detail(log)}</td>
                         </tr>
                     {/if}
                 {/each}

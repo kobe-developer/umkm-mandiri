@@ -1,5 +1,10 @@
 <script>
     import { page, useForm } from '@inertiajs/svelte';
+    import Plus from '@lucide/svelte/icons/plus';
+    import Pencil from '@lucide/svelte/icons/pencil';
+    import Trash from '@lucide/svelte/icons/trash';
+    import Tags from '@lucide/svelte/icons/tags';
+    import CircleAlert from '@lucide/svelte/icons/circle-exclamation-point';
     import PageHeader from '../../components/PageHeader.svelte';
     import Modal from '../../components/Modal.svelte';
     import Toggle from '../../components/Toggle.svelte';
@@ -55,41 +60,72 @@
 
 <PageHeader title="Kategori" subtitle="Urutan tampil di kasir & menu online">
     {#snippet actions()}
-        <button type="button" class="btn-primary" onclick={openCreate}>+ Tambah kategori</button>
+        <button type="button" class="btn-primary" onclick={openCreate}><Plus size={18} />Tambah kategori</button>
     {/snippet}
 </PageHeader>
 
 {#if deleteError}
-    <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{deleteError}</div>
+    <div class="mb-4 flex items-start gap-2.5 rounded-card bg-brand-50 px-4 py-3 text-sm text-brand-700" role="alert">
+        <CircleAlert size={18} class="mt-px shrink-0" aria-hidden="true" />{deleteError}
+    </div>
 {/if}
 
+{#snippet activeBadge(isActive)}
+    <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold {isActive ? 'bg-leaf-50 text-leaf-700' : 'bg-paper-deep text-muted'}">
+        <span class="size-1.5 rounded-full {isActive ? 'bg-leaf-500' : 'bg-faint'}"></span>{isActive ? 'Aktif' : 'Nonaktif'}
+    </span>
+{/snippet}
+
+{#snippet rowActions(category)}
+    <button type="button" class="btn-icon" onclick={() => openEdit(category)} aria-label="Ubah {category.name}" title="Ubah"><Pencil size={17} /></button>
+    <button
+        type="button"
+        class="btn-icon enabled:hover:bg-brand-50 enabled:hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-30"
+        onclick={() => askDelete(category)}
+        disabled={category.products_count > 0}
+        aria-label="Hapus {category.name}"
+        title={category.products_count > 0 ? 'Masih punya produk — nonaktifkan saja' : 'Hapus'}
+    ><Trash size={17} /></button>
+{/snippet}
+
 {#if categories.length === 0}
-    <EmptyState title="Belum ada kategori" />
+    <EmptyState icon={Tags} title="Belum ada kategori" />
 {:else}
-    <div class="card overflow-x-auto">
+    <!-- Mobile: daftar -->
+    <ul class="card divide-y divide-line md:hidden">
+        {#each categories as category (category.id)}
+            <li class="flex items-center gap-3 py-2 pr-2 pl-4">
+                <span class="num w-6 shrink-0 text-sm text-muted">{category.sort_order}</span>
+                <div class="min-w-0 flex-1">
+                    <p class="truncate font-medium text-ink">{category.name}</p>
+                    <div class="mt-1 flex items-center gap-2">
+                        {@render activeBadge(category.is_active)}
+                        <span class="num text-xs text-muted">{category.products_count} produk</span>
+                    </div>
+                </div>
+                <div class="flex shrink-0">{@render rowActions(category)}</div>
+            </li>
+        {/each}
+    </ul>
+
+    <!-- md+: tabel -->
+    <div class="card hidden md:block">
         <table class="table">
-            <thead><tr><th>Urutan</th><th>Nama</th><th>Produk</th><th>Status</th><th class="text-right">Aksi</th></tr></thead>
+            <thead><tr><th class="w-20">Urutan</th><th>Nama</th><th>Produk</th><th>Status</th><th class="text-right">Aksi</th></tr></thead>
             <tbody>
                 {#each categories as category (category.id)}
                     <tr>
-                        <td class="tabular-nums">{category.sort_order}</td>
-                        <td class="font-medium">{category.name}</td>
-                        <td class="tabular-nums">{category.products_count}</td>
-                        <td>
-                            <span class="rounded-full px-2 py-0.5 text-xs font-semibold {category.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-600'}">
-                                {category.is_active ? 'Aktif' : 'Nonaktif'}
-                            </span>
-                        </td>
-                        <td class="text-right whitespace-nowrap">
-                            <button type="button" class="btn-secondary btn-sm" onclick={() => openEdit(category)}>Ubah</button>
-                            <button type="button" class="btn-danger btn-sm" onclick={() => askDelete(category)} disabled={category.products_count > 0} title={category.products_count > 0 ? 'Masih punya produk — nonaktifkan saja' : 'Hapus'}>Hapus</button>
-                        </td>
+                        <td class="num align-middle text-muted">{category.sort_order}</td>
+                        <td class="align-middle font-medium text-ink">{category.name}</td>
+                        <td class="num align-middle">{category.products_count}</td>
+                        <td class="align-middle">{@render activeBadge(category.is_active)}</td>
+                        <td class="py-1.5 text-right whitespace-nowrap">{@render rowActions(category)}</td>
                     </tr>
                 {/each}
             </tbody>
         </table>
     </div>
-    <p class="mt-2 text-xs text-stone-500">Kategori yang masih punya produk tidak bisa dihapus, hanya dinonaktifkan.</p>
+    <p class="hint mt-3">Kategori yang masih punya produk tidak bisa dihapus, hanya dinonaktifkan.</p>
 {/if}
 
 <Modal bind:open={showForm} title={editing ? 'Ubah kategori' : 'Tambah kategori'} size="sm">
@@ -113,9 +149,9 @@
 </Modal>
 
 <Modal bind:open={showDelete} title="Hapus kategori?" size="sm">
-    <p class="text-sm text-stone-600">Kategori <strong>{deleting?.name}</strong> akan dihapus permanen.</p>
+    <p class="text-sm text-ink-soft">Kategori <strong>{deleting?.name}</strong> akan dihapus permanen.</p>
     {#snippet footer()}
         <button type="button" class="btn-secondary" onclick={() => (showDelete = false)}>Batal</button>
-        <button type="button" class="btn-primary" disabled={deleteForm.processing} onclick={destroy}>Hapus</button>
+        <button type="button" class="btn-accent" disabled={deleteForm.processing} onclick={destroy}>Hapus</button>
     {/snippet}
 </Modal>

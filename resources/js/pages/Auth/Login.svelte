@@ -1,5 +1,7 @@
 <script>
     import { useForm, page } from '@inertiajs/svelte';
+    import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
+    import Logo from '../../components/Logo.svelte';
 
     const form = useForm({ username: '', password: '', remember: false });
 
@@ -11,15 +13,15 @@
 
 <svelte:head><title>Masuk · UMKM Mandiri</title></svelte:head>
 
-<div class="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-600 to-orange-500 px-4">
-    <div class="w-full max-w-sm">
-        <div class="mb-6 text-center text-white">
-            <div class="mx-auto mb-3 flex size-16 items-center justify-center rounded-2xl bg-white text-xl font-black text-brand-600 shadow-lg">UM</div>
-            <h1 class="text-2xl font-bold">{page.props.store?.name ?? 'UMKM Mandiri'}</h1>
-            <p class="text-sm text-white/80">Masuk untuk Owner & Kasir</p>
+<div class="flex min-h-dvh flex-col bg-paper px-5 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+    <div class="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
+        <div class="mb-10">
+            <Logo name={page.props.store?.name} size={52} />
+            <h1 class="display mt-6 text-[2.25rem] leading-[1.1] text-ink">Selamat datang kembali.</h1>
+            <p class="mt-2 text-[15px] text-muted">Masuk ke {page.props.store?.name ?? 'UMKM Mandiri'} sebagai owner atau kasir.</p>
         </div>
 
-        <form class="card space-y-4 p-6" onsubmit={submit}>
+        <form class="space-y-5" onsubmit={submit}>
             <div>
                 <label class="label" for="username">Username</label>
                 <!-- svelte-ignore a11y_autofocus -->
@@ -31,16 +33,16 @@
                 <input id="password" type="password" class="input" bind:value={form.password} autocomplete="current-password" required />
                 {#if form.errors.password}<p class="error">{form.errors.password}</p>{/if}
             </div>
-            <label class="flex items-center gap-2 text-sm text-stone-600">
-                <input type="checkbox" class="checkbox" bind:checked={form.remember} /> Ingat saya
+            <label class="flex cursor-pointer items-center gap-2.5 text-sm text-ink-soft">
+                <input type="checkbox" class="checkbox" bind:checked={form.remember} /> Ingat saya di perangkat ini
             </label>
-            <button class="btn-primary w-full" type="submit" disabled={form.processing}>
+            <button class="btn-primary min-h-12 w-full text-base" type="submit" disabled={form.processing}>
                 {form.processing ? 'Memproses…' : 'Masuk'}
             </button>
         </form>
-
-        <p class="mt-4 text-center text-sm text-white/90">
-            Mau pesan? <a href="/menu" class="font-semibold underline">Lihat menu online</a>
-        </p>
     </div>
+
+    <a href="/menu" class="mx-auto mt-10 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-ink">
+        Mau pesan? Lihat menu online <ArrowUpRight size={15} />
+    </a>
 </div>

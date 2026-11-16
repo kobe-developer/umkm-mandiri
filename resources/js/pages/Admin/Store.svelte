@@ -1,5 +1,10 @@
 <script>
     import { router, useForm } from '@inertiajs/svelte';
+    import Copy from '@lucide/svelte/icons/copy';
+    import Check from '@lucide/svelte/icons/check';
+    import ExternalLink from '@lucide/svelte/icons/external-link';
+    import LinkIcon from '@lucide/svelte/icons/link';
+    import Power from '@lucide/svelte/icons/power';
     import PageHeader from '../../components/PageHeader.svelte';
     import Toggle from '../../components/Toggle.svelte';
     import MoneyInput from '../../components/MoneyInput.svelte';
@@ -51,38 +56,51 @@
 
 <PageHeader title="Pengaturan Toko" />
 
-<section class="card mb-4 flex flex-wrap items-center justify-between gap-4 p-5 {settings.is_open ? 'border-emerald-300 bg-emerald-50' : 'border-stone-300 bg-stone-100'}">
-    <div>
-        <p class="text-sm text-stone-600">Status toko saat ini</p>
-        <p class="text-3xl font-black {settings.is_open ? 'text-emerald-700' : 'text-stone-700'}">{settings.is_open ? 'BUKA' : 'TUTUP'}</p>
-        <p class="mt-1 text-xs text-stone-600">
-            {#if settings.auto_schedule}
-                Jadwal otomatis aktif · sekarang {withinHours ? 'dalam' : 'di luar'} jam operasional. Override manual berlaku sampai batas jadwal berikutnya.
-            {:else}
-                Jadwal otomatis nonaktif — buka/tutup hanya manual.
-            {/if}
-        </p>
-        {#if !settings.is_open}<p class="mt-1 text-xs text-stone-600">Saat tutup, menu online tetap bisa dilihat tetapi checkout dinonaktifkan.</p>{/if}
+<section class="mb-4 rounded-card p-5 sm:p-6 {settings.is_open ? 'border border-leaf-100 bg-leaf-50' : 'bg-paper-deep'}">
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-w-0">
+            <p class="text-sm text-ink-soft">Status toko saat ini</p>
+            <p class="display mt-1 flex items-center gap-3 text-4xl leading-none {settings.is_open ? 'text-leaf-700' : 'text-ink'}">
+                <span class="relative flex size-3" aria-hidden="true">
+                    {#if settings.is_open}<span class="absolute inline-flex size-full animate-ping rounded-full bg-leaf-500 opacity-50"></span>{/if}
+                    <span class="relative inline-flex size-3 rounded-full {settings.is_open ? 'bg-leaf-500' : 'bg-faint'}"></span>
+                </span>
+                {settings.is_open ? 'Buka' : 'Tutup'}
+            </p>
+            <p class="mt-3 max-w-xl text-xs leading-relaxed text-ink-soft">
+                {#if settings.auto_schedule}
+                    Jadwal otomatis aktif · sekarang {withinHours ? 'dalam' : 'di luar'} jam operasional. Override manual berlaku sampai batas jadwal berikutnya.
+                {:else}
+                    Jadwal otomatis nonaktif — buka/tutup hanya manual.
+                {/if}
+            </p>
+            {#if !settings.is_open}<p class="mt-1 max-w-xl text-xs leading-relaxed text-ink-soft">Saat tutup, menu online tetap bisa dilihat tetapi checkout dinonaktifkan.</p>{/if}
+        </div>
+        {#if settings.is_open}
+            <button type="button" class="btn-danger w-full shrink-0 sm:w-auto" disabled={toggling} onclick={() => setOpen(false)}><Power size={18} />Tutup toko</button>
+        {:else}
+            <button type="button" class="btn-success w-full shrink-0 sm:w-auto" disabled={toggling} onclick={() => setOpen(true)}><Power size={18} />Buka toko</button>
+        {/if}
     </div>
-    {#if settings.is_open}
-        <button type="button" class="btn-danger px-6 py-3 text-base" disabled={toggling} onclick={() => setOpen(false)}>Tutup toko</button>
-    {:else}
-        <button type="button" class="btn-success px-6 py-3 text-base" disabled={toggling} onclick={() => setOpen(true)}>Buka toko</button>
-    {/if}
 </section>
 
-<section class="card mb-4 flex flex-wrap items-center gap-3 p-4">
+<section class="card mb-8 flex flex-wrap items-center gap-x-3 gap-y-3 p-4">
+    <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-paper-deep text-ink-soft" aria-hidden="true"><LinkIcon size={18} /></div>
     <div class="min-w-0 flex-1">
-        <p class="text-sm font-semibold">Link menu online</p>
-        <p class="truncate text-sm text-stone-600">{menuUrl}</p>
+        <p class="text-sm font-semibold text-ink">Link menu online</p>
+        <p class="truncate text-sm text-muted">{menuUrl}</p>
     </div>
-    <button type="button" class="btn-secondary btn-sm" onclick={copyLink}>{copied ? '✓ Tersalin' : 'Salin link'}</button>
-    <a href={menuUrl} target="_blank" rel="noopener" class="btn-ghost btn-sm">Buka</a>
+    <div class="flex w-full gap-2 sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none">
+        <button type="button" class="btn-secondary" onclick={copyLink}>
+            {#if copied}<Check size={15} class="text-leaf-600" />Tersalin{:else}<Copy size={15} />Salin link{/if}
+        </button>
+        <a href={menuUrl} target="_blank" rel="noopener" class="btn-ghost"><ExternalLink size={15} />Buka</a>
+    </div>
 </section>
 
 <form class="grid gap-4 lg:grid-cols-2" onsubmit={submit}>
-    <section class="card space-y-4 p-5">
-        <h2 class="font-semibold">Profil toko</h2>
+    <section class="card space-y-4 p-4 sm:p-5">
+        <h2 class="display text-lg text-ink">Profil toko</h2>
         <div>
             <label class="label" for="s-name">Nama toko</label>
             <input id="s-name" class="input" bind:value={form.store_name} maxlength="100" required />
@@ -111,29 +129,33 @@
     </section>
 
     <div class="space-y-4">
-        <section class="card space-y-4 p-5">
-            <h2 class="font-semibold">Order online</h2>
-            <Toggle bind:checked={form.online_order_enabled} label="Order online aktif" description="Matikan untuk menonaktifkan checkout tanpa menutup toko." />
-            <Toggle bind:checked={form.allow_pickup} label="Ambil sendiri" />
-            <Toggle bind:checked={form.allow_delivery} label="Diantar" />
-            <div>
-                <label class="label" for="s-min">Minimal order</label>
-                <MoneyInput id="s-min" bind:value={form.min_order} />
-                {#if form.errors.min_order}<p class="error">{form.errors.min_order}</p>{/if}
+        <section class="card p-4 sm:p-5">
+            <h2 class="display mb-1 text-lg text-ink">Order online</h2>
+            <div class="divide-y divide-line [&>*]:py-3.5 [&>*:last-child]:pb-0">
+                <Toggle bind:checked={form.online_order_enabled} label="Order online aktif" description="Matikan untuk menonaktifkan checkout tanpa menutup toko." />
+                <Toggle bind:checked={form.allow_pickup} label="Ambil sendiri" />
+                <Toggle bind:checked={form.allow_delivery} label="Diantar" />
+                <div>
+                    <label class="label" for="s-min">Minimal order</label>
+                    <MoneyInput id="s-min" bind:value={form.min_order} />
+                    {#if form.errors.min_order}<p class="error">{form.errors.min_order}</p>{/if}
+                </div>
             </div>
         </section>
 
-        <section class="card space-y-4 p-5">
-            <h2 class="font-semibold">Hak akses kasir</h2>
-            <Toggle bind:checked={form.cashier_can_view_revenue} label="Kasir boleh melihat omzet" description="Jika mati, kasir hanya melihat jumlah transaksi & produk terlaris." />
-            <Toggle bind:checked={form.cashier_can_discount} label="Kasir boleh memberi diskon manual" />
+        <section class="card p-4 sm:p-5">
+            <h2 class="display mb-1 text-lg text-ink">Hak akses kasir</h2>
+            <div class="divide-y divide-line [&>*]:py-3.5 [&>*:last-child]:pb-0">
+                <Toggle bind:checked={form.cashier_can_view_revenue} label="Kasir boleh melihat omzet" description="Jika mati, kasir hanya melihat jumlah transaksi & produk terlaris." />
+                <Toggle bind:checked={form.cashier_can_discount} label="Kasir boleh memberi diskon manual" />
+            </div>
         </section>
     </div>
 
-    <section class="card p-5 lg:col-span-2">
-        <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <h2 class="font-semibold">Jam operasional</h2>
-            <div class="w-full sm:w-auto sm:min-w-80">
+    <section class="card p-4 sm:p-5 lg:col-span-2">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 class="display text-lg text-ink">Jam operasional</h2>
+            <div class="w-full rounded-xl bg-paper px-4 py-3 sm:w-auto sm:min-w-80">
                 <Toggle bind:checked={form.auto_schedule} label="Buka/tutup otomatis sesuai jadwal" />
             </div>
         </div>
@@ -141,6 +163,6 @@
     </section>
 
     <div class="flex justify-end lg:col-span-2">
-        <button class="btn-primary" type="submit" disabled={form.processing}>{form.processing ? 'Menyimpan…' : 'Simpan pengaturan'}</button>
+        <button class="btn-primary w-full sm:w-auto" type="submit" disabled={form.processing}>{form.processing ? 'Menyimpan…' : 'Simpan pengaturan'}</button>
     </div>
 </form>

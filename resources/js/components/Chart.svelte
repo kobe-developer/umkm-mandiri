@@ -14,7 +14,15 @@
     let canvas = $state();
     let chart;
 
-    const PALETTE = ['#dc2626', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#78716c'];
+    // Selaras dengan token desain: tinta, cabai, daun, kunyit, lalu nada tanah
+    const PALETTE = ['#1b1813', '#b93a1a', '#4d7a46', '#c98a1b', '#8a6f5a', '#5f7f8c', '#a69d90', '#d6cdbd'];
+    const INK = '#1b1813';
+    const MUTED = '#776e62';
+    const GRID = '#ece6da';
+
+    Chart.defaults.font.family = "'Plus Jakarta Sans Variable', system-ui, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = MUTED;
 
     function formatValue(value) {
         return money ? rupiah(value) : new Intl.NumberFormat('id-ID').format(value);
@@ -27,13 +35,17 @@
             data: {
                 labels,
                 datasets: datasets.map((dataset, index) => ({
-                    borderWidth: isDoughnut ? 0 : 2,
-                    borderRadius: type === 'bar' ? 6 : 0,
-                    tension: 0.3,
+                    borderWidth: isDoughnut ? 2 : type === 'line' ? 2 : 0,
+                    borderRadius: type === 'bar' ? 8 : 0,
+                    borderSkipped: false,
+                    maxBarThickness: 36,
+                    tension: 0.35,
                     fill: type === 'line',
-                    backgroundColor: isDoughnut ? PALETTE : type === 'line' ? 'rgba(220,38,38,0.08)' : PALETTE[index % PALETTE.length],
-                    borderColor: isDoughnut ? undefined : PALETTE[index % PALETTE.length],
-                    pointRadius: 2,
+                    backgroundColor: isDoughnut ? PALETTE : type === 'line' ? 'rgba(185,58,26,0.07)' : PALETTE[index % PALETTE.length],
+                    borderColor: isDoughnut ? '#fffdf9' : type === 'line' ? '#b93a1a' : PALETTE[index % PALETTE.length],
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    pointBackgroundColor: '#b93a1a',
                     ...dataset,
                 })),
             },
@@ -42,12 +54,27 @@
                 maintainAspectRatio: false,
                 indexAxis: horizontal ? 'y' : 'x',
                 plugins: {
-                    legend: { display: isDoughnut || datasets.length > 1, position: 'bottom' },
-                    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label ?? ctx.label}: ${formatValue(ctx.raw)}` } },
+                    legend: { display: isDoughnut || datasets.length > 1, position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 6, boxHeight: 6, padding: 16 } },
+                    tooltip: {
+                        backgroundColor: INK,
+                        titleColor: '#f6f2ea',
+                        bodyColor: '#f6f2ea',
+                        padding: 10,
+                        cornerRadius: 10,
+                        displayColors: false,
+                        callbacks: { label: (ctx) => `${ctx.dataset.label ?? ctx.label}: ${formatValue(ctx.raw)}` },
+                    },
                 },
+                cutout: isDoughnut ? '68%' : undefined,
+                interaction: isDoughnut ? undefined : { mode: 'index', intersect: false },
                 scales: isDoughnut ? {} : {
-                    [horizontal ? 'x' : 'y']: { beginAtZero: true, ticks: { callback: (v) => (money ? rupiahShort(v) : v) } },
-                    [horizontal ? 'y' : 'x']: { grid: { display: false } },
+                    [horizontal ? 'x' : 'y']: {
+                        beginAtZero: true,
+                        border: { display: false },
+                        grid: { color: GRID },
+                        ticks: { maxTicksLimit: 5, callback: (v) => (money ? rupiahShort(v) : v) },
+                    },
+                    [horizontal ? 'y' : 'x']: { border: { display: false }, grid: { display: false }, ticks: { color: horizontal ? INK : MUTED } },
                 },
             },
         };

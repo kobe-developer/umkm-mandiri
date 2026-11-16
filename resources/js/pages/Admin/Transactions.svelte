@@ -1,5 +1,8 @@
 <script>
     import { Link, router } from '@inertiajs/svelte';
+    import Download from '@lucide/svelte/icons/download';
+    import Search from '@lucide/svelte/icons/search';
+    import ReceiptText from '@lucide/svelte/icons/receipt-text';
     import PageHeader from '../../components/PageHeader.svelte';
     import PeriodFilter from '../../components/PeriodFilter.svelte';
     import StatusBadge from '../../components/StatusBadge.svelte';
@@ -34,15 +37,18 @@
 
 <PageHeader title="Semua Transaksi" subtitle="Dine in, take away & online dalam satu daftar">
     {#snippet actions()}
-        <a class="btn-secondary btn-sm" href="/admin/transaksi/export/xlsx?{exportQuery}">⬇️ Excel</a>
-        <a class="btn-secondary btn-sm" href="/admin/transaksi/export/pdf?{exportQuery}">⬇️ PDF</a>
+        <a class="btn-secondary btn-sm" href="/admin/transaksi/export/xlsx?{exportQuery}"><Download size={15} />Excel</a>
+        <a class="btn-secondary btn-sm" href="/admin/transaksi/export/pdf?{exportQuery}"><Download size={15} />PDF</a>
     {/snippet}
 </PageHeader>
 
-<div class="mb-3"><PeriodFilter {period} url="/admin/transaksi" extra={activeFilters} /></div>
+<div class="mb-4"><PeriodFilter {period} url="/admin/transaksi" extra={activeFilters} /></div>
 
-<form class="card mb-4 grid gap-2 p-3 sm:grid-cols-3 lg:grid-cols-7" onsubmit={apply}>
-    <input class="input lg:col-span-2" placeholder="Cari no. order / nama / WA" bind:value={values.search} aria-label="Cari" />
+<form class="card mb-6 grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 sm:p-4 lg:grid-cols-5" onsubmit={apply}>
+    <div class="relative col-span-2 sm:col-span-3 lg:col-span-5">
+        <Search size={17} class="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-faint" aria-hidden="true" />
+        <input class="input pl-10" type="search" placeholder="Cari no. order / nama / WA" bind:value={values.search} aria-label="Cari" />
+    </div>
     <select class="input" bind:value={values.channel} aria-label="Kanal">
         <option value="">Semua kanal</option>
         {#each options.channels as option (option.value)}<option value={option.value}>{option.label}</option>{/each}
@@ -59,21 +65,51 @@
         <option value="">Semua metode</option>
         {#each options.paymentMethods as option (option.id)}<option value={String(option.id)}>{option.name}</option>{/each}
     </select>
-    <select class="input" bind:value={values.cashier_id} aria-label="Kasir">
+    <select class="input col-span-2 sm:col-span-1" bind:value={values.cashier_id} aria-label="Kasir">
         <option value="">Semua kasir</option>
         {#each options.cashiers as option (option.id)}<option value={String(option.id)}>{option.name}</option>{/each}
     </select>
-    <div class="flex gap-2 sm:col-span-3 lg:col-span-7 lg:justify-end">
-        <button type="button" class="btn-ghost btn-sm" onclick={reset}>Reset</button>
-        <button type="submit" class="btn-primary btn-sm">Terapkan filter</button>
+    <div class="col-span-2 flex gap-2 pt-1 sm:col-span-3 sm:justify-end lg:col-span-5 [&>*]:flex-1 sm:[&>*]:flex-none">
+        <button type="button" class="btn-ghost" onclick={reset}>Reset</button>
+        <button type="submit" class="btn-primary">Terapkan</button>
     </div>
 </form>
 
 {#if orders.data.length === 0}
-    <EmptyState title="Tidak ada transaksi" description="Coba ubah periode atau filter." />
+    <EmptyState icon={ReceiptText} title="Tidak ada transaksi" description="Coba ubah periode atau filter." />
 {:else}
-    <div class="card overflow-x-auto">
-        <table class="table min-w-[860px]">
+    <!-- Mobile & tablet: daftar ringkas -->
+    <ul class="card divide-y divide-line overflow-hidden xl:hidden">
+        {#each orders.data as order (order.id)}
+            <li>
+                <Link href="/pos/orders/{order.order_number}" class="block px-4 py-3.5 transition-colors hover:bg-paper/60 active:bg-paper">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="num font-semibold text-ink">{order.order_number}</p>
+                            <p class="mt-0.5 truncate text-xs text-muted">
+                                {dateTime(order.created_at)} · {order.channel_label}{#if order.table_number} · Meja {order.table_number}{/if}
+                            </p>
+                        </div>
+                        <div class="shrink-0 text-right">
+                            <p class="num font-semibold text-ink">{rupiah(order.total)}</p>
+                            {#if order.discount > 0}<p class="num text-xs text-muted">diskon {rupiah(order.discount)}</p>{/if}
+                        </div>
+                    </div>
+                    <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                        <StatusBadge status={order.status} label={order.status_label} />
+                        <StatusBadge kind="payment" status={order.payment_status} label={order.payment_status_label} />
+                        <span class="min-w-0 truncate text-xs text-muted">
+                            {order.payment_method?.name ?? '-'}{#if order.customer_name} · {order.customer_name}{/if}{#if order.cashier?.name} · {order.cashier.name}{/if}
+                        </span>
+                    </div>
+                </Link>
+            </li>
+        {/each}
+    </ul>
+
+    <!-- Layar lebar: tabel lengkap -->
+    <div class="card hidden overflow-x-auto xl:block">
+        <table class="table">
             <thead>
                 <tr>
                     <th>No. Order</th><th>Waktu</th><th>Kanal</th><th>Pelanggan</th><th>Status</th>
@@ -82,18 +118,18 @@
             </thead>
             <tbody>
                 {#each orders.data as order (order.id)}
-                    <tr class="hover:bg-stone-50">
-                        <td><Link href="/pos/orders/{order.order_number}" class="font-semibold text-brand-700 hover:underline">{order.order_number}</Link></td>
-                        <td class="whitespace-nowrap">{dateTime(order.created_at)}</td>
-                        <td>{order.channel_label}{#if order.table_number}<span class="text-stone-500"> · Meja {order.table_number}</span>{/if}</td>
+                    <tr>
+                        <td><Link href="/pos/orders/{order.order_number}" class="num font-semibold text-ink underline-offset-4 hover:text-brand-700 hover:underline">{order.order_number}</Link></td>
+                        <td class="whitespace-nowrap text-ink-soft">{dateTime(order.created_at)}</td>
+                        <td class="whitespace-nowrap">{order.channel_label}{#if order.table_number}<span class="text-muted"> · Meja {order.table_number}</span>{/if}</td>
                         <td>{order.customer_name ?? '-'}</td>
                         <td><StatusBadge status={order.status} label={order.status_label} /></td>
                         <td><StatusBadge kind="payment" status={order.payment_status} label={order.payment_status_label} /></td>
-                        <td>{order.payment_method?.name ?? '-'}</td>
-                        <td>{order.cashier?.name ?? '-'}</td>
-                        <td class="text-right font-semibold tabular-nums">
+                        <td class="text-ink-soft">{order.payment_method?.name ?? '-'}</td>
+                        <td class="text-ink-soft">{order.cashier?.name ?? '-'}</td>
+                        <td class="num text-right font-semibold whitespace-nowrap">
                             {rupiah(order.total)}
-                            {#if order.discount > 0}<span class="block text-xs font-normal text-stone-500">diskon {rupiah(order.discount)}</span>{/if}
+                            {#if order.discount > 0}<span class="block text-xs font-normal text-muted">diskon {rupiah(order.discount)}</span>{/if}
                         </td>
                     </tr>
                 {/each}

@@ -1,5 +1,7 @@
 <script>
     import { Link } from '@inertiajs/svelte';
+    import TriangleAlert from '@lucide/svelte/icons/triangle-exclamation-point';
+    import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import PageHeader from '../../components/PageHeader.svelte';
     import PeriodFilter from '../../components/PeriodFilter.svelte';
     import StatCard from '../../components/StatCard.svelte';
@@ -24,101 +26,126 @@
 
 <svelte:head><title>Laporan & Tren</title></svelte:head>
 
-<PageHeader title="Laporan & Tren Penjualan" subtitle="Omzet dihitung dari order Selesai + Lunas · {periodLabel}" />
+<PageHeader eyebrow={periodLabel} title="Laporan & Tren Penjualan" subtitle="Omzet dihitung dari order Selesai + Lunas" />
 
-<div class="mb-5">
+<div class="mb-6">
     <PeriodFilter {period} {presets} url="/admin" />
 </div>
 
 {#if lowStock.length > 0}
-    <div class="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        <p class="font-semibold">⚠️ Stok menipis ({lowStock.length} produk)</p>
-        <p class="mt-1">
-            {#each lowStock as product, index (product.id)}
-                {product.name} <span class="font-semibold">({product.stock}/{product.stock_minimum})</span>{index < lowStock.length - 1 ? ', ' : ''}
-            {/each}
-        </p>
-        <Link href="/admin/stok" class="mt-2 inline-block font-semibold underline">Kelola stok →</Link>
+    <div class="mb-6 flex gap-3 rounded-card bg-amber-soft p-4 text-sm text-amber-ink">
+        <TriangleAlert size={18} class="mt-0.5 shrink-0" aria-hidden="true" />
+        <div class="min-w-0">
+            <p class="font-semibold">Stok menipis · {lowStock.length} produk</p>
+            <p class="mt-1 leading-relaxed">
+                {#each lowStock as product, index (product.id)}
+                    {product.name} <span class="num font-semibold">({product.stock}/{product.stock_minimum})</span>{index < lowStock.length - 1 ? ', ' : ''}
+                {/each}
+            </p>
+            <Link href="/admin/stok" class="mt-2 inline-flex min-h-9 items-center gap-1 font-semibold underline-offset-4 hover:underline">
+                Kelola stok <ArrowRight size={15} />
+            </Link>
+        </div>
     </div>
 {/if}
 
-<div class="grid gap-3 sm:grid-cols-3">
-    <StatCard label="Omzet" value={rupiah(current.revenue)} change={change.revenue} />
+<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div class="col-span-2 sm:col-span-1">
+        <StatCard featured label="Omzet" value={rupiah(current.revenue)} change={change.revenue} />
+    </div>
     <StatCard label="Jumlah transaksi" value={current.transactions} change={change.transactions} />
     <StatCard label="Rata-rata nilai order" value={rupiah(current.average)} change={change.average} />
 </div>
 
-<div class="mt-4 flex flex-wrap gap-2">
-    {#each STATUS_ORDER as status (status)}
-        <span class="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-sm ring-1 ring-stone-200">
-            <StatusBadge {status} />
-            <span class="font-semibold tabular-nums">{statusCounts[status] ?? 0}</span>
-        </span>
-    {/each}
-</div>
+<section class="mt-8">
+    <h2 class="display mb-3 text-lg text-ink">Status order</h2>
+    <dl class="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line sm:grid-cols-3 lg:grid-cols-6">
+        {#each STATUS_ORDER as status (status)}
+            <div class="flex flex-col gap-2 bg-surface p-3.5 sm:p-4">
+                <dt><StatusBadge {status} /></dt>
+                <dd class="num text-2xl leading-none font-semibold text-ink">{statusCounts[status] ?? 0}</dd>
+            </div>
+        {/each}
+    </dl>
+</section>
 
-<div class="mt-5 grid gap-4 lg:grid-cols-3">
-    <ChartCard title="Omzet harian" class="lg:col-span-2">
-        <Chart type="line" labels={daily.map((d) => shortDate(d.date))} datasets={[{ label: 'Omzet', data: daily.map((d) => d.revenue) }]} />
-    </ChartCard>
+<section class="mt-8">
+    <h2 class="display mb-3 text-lg text-ink">Tren omzet</h2>
+    <div class="grid gap-4 lg:grid-cols-3">
+        <ChartCard title="Omzet harian" class="lg:col-span-2">
+            <Chart type="line" labels={daily.map((d) => shortDate(d.date))} datasets={[{ label: 'Omzet', data: daily.map((d) => d.revenue) }]} />
+        </ChartCard>
 
-    <ChartCard title="Omzet per kanal">
-        <Chart type="doughnut" labels={channels.map((c) => c.label)} datasets={[{ label: 'Omzet', data: channels.map((c) => c.revenue) }]} />
-        <ul class="mt-3 space-y-1 text-sm">
-            {#each channels as channel (channel.key)}
-                <li class="flex justify-between"><span>{channel.label} · {channel.transactions} trx</span><span class="font-semibold tabular-nums">{rupiah(channel.revenue)}</span></li>
-            {/each}
-        </ul>
-    </ChartCard>
+        <ChartCard title="Omzet per kanal">
+            <Chart type="doughnut" labels={channels.map((c) => c.label)} datasets={[{ label: 'Omzet', data: channels.map((c) => c.revenue) }]} />
+            <ul class="mt-4 divide-y divide-line text-sm">
+                {#each channels as channel (channel.key)}
+                    <li class="flex items-baseline justify-between gap-3 py-2 first:pt-0 last:pb-0">
+                        <span class="min-w-0 text-ink-soft">{channel.label} <span class="num text-muted">· {channel.transactions} trx</span></span>
+                        <span class="num shrink-0 font-semibold text-ink">{rupiah(channel.revenue)}</span>
+                    </li>
+                {/each}
+            </ul>
+        </ChartCard>
+    </div>
+</section>
 
-    <ChartCard title="Per metode pembayaran">
-        {#if paymentMethods.length === 0}
-            <p class="py-6 text-center text-sm text-stone-500">Belum ada data</p>
-        {:else}
-            <Chart type="doughnut" labels={paymentMethods.map((m) => m.label)} datasets={[{ label: 'Omzet', data: paymentMethods.map((m) => m.revenue) }]} height={220} />
-        {/if}
-    </ChartCard>
+<section class="mt-8">
+    <h2 class="display mb-3 text-lg text-ink">Rincian penjualan</h2>
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <ChartCard title="Per metode pembayaran">
+            {#if paymentMethods.length === 0}
+                <p class="py-6 text-center text-sm text-muted">Belum ada data</p>
+            {:else}
+                <Chart type="doughnut" labels={paymentMethods.map((m) => m.label)} datasets={[{ label: 'Omzet', data: paymentMethods.map((m) => m.revenue) }]} height={220} />
+            {/if}
+        </ChartCard>
 
-    <ChartCard title="Per kategori" subtitle="Subtotal item sebelum diskon">
-        {#if categories.length === 0}
-            <p class="py-6 text-center text-sm text-stone-500">Belum ada data</p>
-        {:else}
-            <Chart type="bar" labels={categories.map((c) => c.label)} datasets={[{ label: 'Omzet', data: categories.map((c) => c.revenue) }]} height={220} />
-        {/if}
-    </ChartCard>
+        <ChartCard title="Per kategori" subtitle="Subtotal item sebelum diskon">
+            {#if categories.length === 0}
+                <p class="py-6 text-center text-sm text-muted">Belum ada data</p>
+            {:else}
+                <Chart type="bar" labels={categories.map((c) => c.label)} datasets={[{ label: 'Omzet', data: categories.map((c) => c.revenue) }]} height={220} />
+            {/if}
+        </ChartCard>
 
-    <ChartCard title="Jam ramai" subtitle="Omzet per jam">
-        <Chart type="bar" labels={busyHours.map((h) => `${String(h.hour).padStart(2, '0')}:00`)} datasets={[{ label: 'Omzet', data: busyHours.map((h) => h.revenue) }]} height={220} />
-    </ChartCard>
+        <ChartCard title="Jam ramai" subtitle="Omzet per jam" class="md:col-span-2 lg:col-span-1">
+            <Chart type="bar" labels={busyHours.map((h) => `${String(h.hour).padStart(2, '0')}:00`)} datasets={[{ label: 'Omzet', data: busyHours.map((h) => h.revenue) }]} height={220} />
+        </ChartCard>
+    </div>
+</section>
 
-    <ChartCard title="Produk terlaris (qty)">
-        <RankList rows={topByQuantity} valueKey="quantity" />
-    </ChartCard>
+<section class="mt-8">
+    <h2 class="display mb-3 text-lg text-ink">Produk & kasir</h2>
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <ChartCard title="Terlaris menurut porsi">
+            <RankList rows={topByQuantity} valueKey="quantity" />
+        </ChartCard>
 
-    <ChartCard title="Produk terlaris (omzet)">
-        <RankList rows={topByRevenue} valueKey="revenue" />
-    </ChartCard>
+        <ChartCard title="Terlaris menurut omzet">
+            <RankList rows={topByRevenue} valueKey="revenue" />
+        </ChartCard>
 
-    <ChartCard title="Performa per kasir">
-        {#if cashiers.length === 0}
-            <p class="py-6 text-center text-sm text-stone-500">Belum ada data</p>
-        {:else}
-            <table class="table">
-                <thead><tr><th>Kasir</th><th class="text-right">Trx</th><th class="text-right">Omzet</th></tr></thead>
-                <tbody>
+        <ChartCard title="Performa per kasir" class="md:col-span-2 lg:col-span-1">
+            {#if cashiers.length === 0}
+                <p class="py-6 text-center text-sm text-muted">Belum ada data</p>
+            {:else}
+                <ul class="divide-y divide-line text-sm">
                     {#each cashiers as cashier (cashier.name)}
-                        <tr>
-                            <td>{cashier.name}</td>
-                            <td class="text-right tabular-nums">{cashier.transactions}</td>
-                            <td class="text-right font-semibold tabular-nums">{rupiah(cashier.revenue)}</td>
-                        </tr>
+                        <li class="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                            <div class="min-w-0">
+                                <p class="truncate font-medium text-ink">{cashier.name}</p>
+                                <p class="num text-xs text-muted">{cashier.transactions} transaksi</p>
+                            </div>
+                            <span class="num shrink-0 font-semibold text-ink">{rupiah(cashier.revenue)}</span>
+                        </li>
                     {/each}
-                </tbody>
-            </table>
-        {/if}
-    </ChartCard>
-</div>
+                </ul>
+            {/if}
+        </ChartCard>
+    </div>
+</section>
 
-<p class="mt-4 text-xs text-stone-500">
-    Periode sebelumnya: omzet {rupiah(comparison.previous.revenue)} · {comparison.previous.transactions} transaksi.
+<p class="mt-8 border-t border-line pt-4 text-xs text-muted">
+    Periode sebelumnya: omzet <span class="num">{rupiah(comparison.previous.revenue)}</span> · <span class="num">{comparison.previous.transactions}</span> transaksi.
 </p>

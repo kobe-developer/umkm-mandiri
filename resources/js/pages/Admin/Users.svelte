@@ -1,5 +1,9 @@
 <script>
     import { Link, page, useForm } from '@inertiajs/svelte';
+    import Plus from '@lucide/svelte/icons/plus';
+    import Pencil from '@lucide/svelte/icons/pencil';
+    import KeyRound from '@lucide/svelte/icons/key-round';
+    import Check from '@lucide/svelte/icons/check';
     import PageHeader from '../../components/PageHeader.svelte';
     import Modal from '../../components/Modal.svelte';
     import Toggle from '../../components/Toggle.svelte';
@@ -56,30 +60,64 @@
 
 <PageHeader title="User" subtitle="Akun Owner & Kasir">
     {#snippet actions()}
-        <button type="button" class="btn-primary" onclick={openCreate}>+ Tambah user</button>
+        <button type="button" class="btn-primary" onclick={openCreate}><Plus size={18} />Tambah user</button>
     {/snippet}
 </PageHeader>
 
-<p class="mb-4 text-sm text-stone-500">
-    PIN owner untuk menyetujui void/refund diatur dari <Link href="/akun" class="font-semibold text-brand-700 underline">halaman Akun saya</Link>.
+<p class="mb-5 text-sm text-muted">
+    PIN owner untuk menyetujui void/refund diatur dari <Link href="/akun" class="font-medium text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink">halaman Akun saya</Link>.
 </p>
 
-<div class="card overflow-x-auto">
-    <table class="table min-w-[720px]">
+{#snippet roleBadge(user)}
+    <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold {user.role === 'owner' ? 'bg-ink text-paper' : 'bg-paper-deep text-ink-soft'}">{roleLabel[user.role] ?? user.role}</span>
+{/snippet}
+
+{#snippet pinStatus(user)}
+    {#if user.role !== 'owner'}<span class="text-faint">-</span>
+    {:else if user.has_pin}<span class="inline-flex items-center gap-1 text-leaf-700"><Check size={14} />Sudah</span>
+    {:else}<span class="text-amber-ink">Belum</span>{/if}
+{/snippet}
+
+{#snippet rowActions(user)}
+    <button type="button" class="btn-icon" onclick={() => openEdit(user)} aria-label="Ubah {user.username}" title="Ubah"><Pencil size={17} /></button>
+    <button type="button" class="btn-icon" onclick={() => openReset(user)} aria-label="Reset password {user.username}" title="Reset password"><KeyRound size={17} /></button>
+{/snippet}
+
+<!-- Mobile & tablet: daftar -->
+<ul class="card divide-y divide-line xl:hidden">
+    {#each users as user (user.id)}
+        <li class="flex items-start gap-3 py-3 pr-2 pl-4">
+            <div class="min-w-0 flex-1 {user.is_active ? '' : 'opacity-55'}">
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <p class="font-medium text-ink">{user.name}{#if user.id === currentUserId}<span class="ml-1 text-xs font-normal text-muted">(Anda)</span>{/if}</p>
+                    {@render roleBadge(user)}
+                </div>
+                <p class="mt-0.5 truncate text-sm text-muted">{user.username}{#if user.email} · {user.email}{/if}</p>
+                <p class="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-muted">
+                    <span class={user.is_active ? 'text-ink-soft' : ''}>{user.is_active ? 'Aktif' : 'Nonaktif'}</span>
+                    {#if user.role === 'owner'}<span aria-hidden="true">·</span><span class="inline-flex items-center gap-1">PIN {@render pinStatus(user)}</span>{/if}
+                    <span aria-hidden="true">·</span><span>Login {user.last_login_at ? dateTime(user.last_login_at) : '-'}</span>
+                </p>
+            </div>
+            <div class="flex shrink-0">{@render rowActions(user)}</div>
+        </li>
+    {/each}
+</ul>
+
+<!-- Layar lebar: tabel -->
+<div class="card hidden overflow-x-auto xl:block">
+    <table class="table">
         <thead><tr><th>Nama</th><th>Username</th><th>Role</th><th>Status</th><th>PIN</th><th>Login terakhir</th><th class="text-right">Aksi</th></tr></thead>
         <tbody>
             {#each users as user (user.id)}
-                <tr class={user.is_active ? '' : 'opacity-60'}>
-                    <td class="font-medium">{user.name}{#if user.id === currentUserId}<span class="ml-1 text-xs text-stone-400">(Anda)</span>{/if}</td>
-                    <td>{user.username}{#if user.email}<span class="block text-xs text-stone-500">{user.email}</span>{/if}</td>
-                    <td><span class="rounded-full px-2 py-0.5 text-xs font-semibold {user.role === 'owner' ? 'bg-brand-100 text-brand-700' : 'bg-stone-100 text-stone-700'}">{roleLabel[user.role] ?? user.role}</span></td>
-                    <td>{user.is_active ? 'Aktif' : 'Nonaktif'}</td>
-                    <td>{user.role === 'owner' ? (user.has_pin ? '✓ Sudah' : '— Belum') : '-'}</td>
-                    <td class="whitespace-nowrap">{user.last_login_at ? dateTime(user.last_login_at) : '-'}</td>
-                    <td class="text-right whitespace-nowrap">
-                        <button type="button" class="btn-secondary btn-sm" onclick={() => openEdit(user)}>Ubah</button>
-                        <button type="button" class="btn-ghost btn-sm" onclick={() => openReset(user)}>Reset password</button>
-                    </td>
+                <tr class={user.is_active ? '' : 'text-muted'}>
+                    <td class="align-middle font-medium {user.is_active ? 'text-ink' : ''}">{user.name}{#if user.id === currentUserId}<span class="ml-1 text-xs font-normal text-muted">(Anda)</span>{/if}</td>
+                    <td class="align-middle">{user.username}{#if user.email}<span class="block text-xs text-muted">{user.email}</span>{/if}</td>
+                    <td class="align-middle">{@render roleBadge(user)}</td>
+                    <td class="align-middle">{user.is_active ? 'Aktif' : 'Nonaktif'}</td>
+                    <td class="align-middle">{@render pinStatus(user)}</td>
+                    <td class="align-middle whitespace-nowrap">{user.last_login_at ? dateTime(user.last_login_at) : '-'}</td>
+                    <td class="py-1.5 text-right whitespace-nowrap">{@render rowActions(user)}</td>
                 </tr>
             {/each}
         </tbody>
@@ -129,7 +167,7 @@
 </Modal>
 
 <Modal bind:open={showReset} title="Reset password {resetting?.username ?? ''}" size="sm">
-    <form id="reset-form" class="space-y-3" onsubmit={reset}>
+    <form id="reset-form" onsubmit={reset}>
         <label class="label" for="r-password">Password baru (min. 8 karakter)</label>
         <input id="r-password" type="password" class="input" bind:value={resetForm.password} minlength="8" autocomplete="new-password" required />
         {#if resetForm.errors.password}<p class="error">{resetForm.errors.password}</p>{/if}

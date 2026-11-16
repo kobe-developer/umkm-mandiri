@@ -1,4 +1,6 @@
 <script>
+    import Copy from '@lucide/svelte/icons/copy';
+
     /** Editor jam operasional per hari. hours: { monday: {open, close, closed}, ... } */
     let { hours = $bindable(), days = [], errors = {} } = $props();
 
@@ -13,21 +15,27 @@
     }
 </script>
 
-<div class="divide-y divide-stone-100">
+<div class="divide-y divide-line">
     {#each days as day (day)}
-        <div class="flex flex-wrap items-center gap-2 py-2">
-            <span class="w-20 text-sm font-medium">{DAY_LABELS[day] ?? day}</span>
-            <input type="time" class="input w-auto py-1.5" bind:value={hours[day].open} disabled={hours[day].closed} aria-label="Jam buka {DAY_LABELS[day]}" />
-            <span class="text-stone-400">–</span>
-            <input type="time" class="input w-auto py-1.5" bind:value={hours[day].close} disabled={hours[day].closed} aria-label="Jam tutup {DAY_LABELS[day]}" />
-            <label class="flex items-center gap-1.5 text-sm text-stone-600">
-                <input type="checkbox" class="checkbox" bind:checked={hours[day].closed} /> Libur
-            </label>
-            <button type="button" class="btn-ghost btn-sm ml-auto" onclick={() => copyToAll(day)}>Salin ke semua</button>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-2 py-3 first:pt-0 last:pb-0">
+            <span class="w-20 text-sm font-medium {hours[day].closed ? 'text-muted' : 'text-ink'}">{DAY_LABELS[day] ?? day}</span>
+            <div class="order-last grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 sm:order-none sm:w-auto sm:max-w-xs sm:flex-1">
+                <input type="time" class="input num" bind:value={hours[day].open} disabled={hours[day].closed} aria-label="Jam buka {DAY_LABELS[day]}" />
+                <span class="text-faint">–</span>
+                <input type="time" class="input num" bind:value={hours[day].close} disabled={hours[day].closed} aria-label="Jam tutup {DAY_LABELS[day]}" />
+            </div>
+            <div class="ml-auto flex items-center gap-1">
+                <label class="flex min-h-11 items-center gap-2 px-2 text-sm text-ink-soft">
+                    <input type="checkbox" class="checkbox" bind:checked={hours[day].closed} /> Libur
+                </label>
+                <button type="button" class="btn-ghost btn-sm" onclick={() => copyToAll(day)}>
+                    <Copy size={14} /><span>Salin ke semua</span>
+                </button>
+            </div>
             {#if errors[`operating_hours.${day}.open`] || errors[`operating_hours.${day}.close`]}
-                <p class="error w-full">{errors[`operating_hours.${day}.open`] ?? errors[`operating_hours.${day}.close`]}</p>
+                <p class="error order-last mt-0 w-full">{errors[`operating_hours.${day}.open`] ?? errors[`operating_hours.${day}.close`]}</p>
             {/if}
         </div>
     {/each}
 </div>
-<p class="mt-2 text-xs text-stone-500">Jam tutup lebih kecil dari jam buka berarti lewat tengah malam (mis. 16:00–01:00).</p>
+<p class="hint mt-4">Jam tutup lebih kecil dari jam buka berarti lewat tengah malam (mis. 16:00–01:00).</p>

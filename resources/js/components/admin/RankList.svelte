@@ -12,17 +12,23 @@
 </script>
 
 {#if rows.length === 0}
-    <p class="py-6 text-center text-sm text-stone-500">{emptyText}</p>
+    <p class="py-6 text-center text-sm text-muted">{emptyText}</p>
 {:else}
-    <ol class="space-y-2">
+    <ol class="space-y-3.5">
         {#each rows as row, index (row[labelKey])}
-            <li>
-                <div class="flex items-baseline justify-between gap-2 text-sm">
-                    <span class="truncate"><span class="mr-1 text-stone-400 tabular-nums">{index + 1}.</span>{row[labelKey]}</span>
-                    <span class="shrink-0 font-semibold tabular-nums">{format(row[valueKey])}</span>
-                </div>
-                <div class="mt-1 h-1.5 rounded-full bg-stone-100">
-                    <div class="h-1.5 rounded-full bg-brand-500" style="width: {Math.max(2, (row[valueKey] / max) * 100)}%"></div>
+            <li class="flex gap-3">
+                <span class="num w-5 shrink-0 pt-px text-right text-sm text-muted">{index + 1}</span>
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-baseline justify-between gap-3 text-sm">
+                        <span class="truncate text-ink">{row[labelKey]}</span>
+                        <span class="num shrink-0 font-semibold text-ink">{format(row[valueKey])}</span>
+                    </div>
+                    <div class="mt-1.5 h-1 rounded-full bg-paper-deep">
+                        <div
+                            class="h-1 rounded-full {index === 0 ? 'bg-brand-500' : 'bg-ink/25'}"
+                            style="width: {Math.max(2, (row[valueKey] / max) * 100)}%"
+                        ></div>
+                    </div>
                 </div>
             </li>
         {/each}

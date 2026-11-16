@@ -4,6 +4,10 @@
     import StatusTimeline from '../../components/menu/StatusTimeline.svelte';
     import PaymentInfo from '../../components/menu/PaymentInfo.svelte';
     import StatusBadge from '../../components/StatusBadge.svelte';
+    import Check from '@lucide/svelte/icons/check';
+    import MessageCircle from '@lucide/svelte/icons/message-circle';
+    import RefreshCw from '@lucide/svelte/icons/refresh-cw';
+    import Copy from '@lucide/svelte/icons/copy';
     import { rupiah, dateTime } from '../../lib/format.js';
     import { cart } from '../../lib/cart.svelte.js';
 
@@ -17,6 +21,18 @@
         storeWhatsapp ? `https://wa.me/${storeWhatsapp}?text=${encodeURIComponent(`Halo, saya mau tanya pesanan ${order.order_number} atas nama ${order.customer_name}.`)}` : null,
     );
     const showPaymentInfo = $derived(order.payment_status === 'belum_bayar' && order.status !== 'dibatalkan');
+
+    let copied = $state(false);
+
+    async function copyOrderNumber() {
+        try {
+            await navigator.clipboard.writeText(order.order_number);
+            copied = true;
+            setTimeout(() => (copied = false), 1800);
+        } catch {
+            copied = false;
+        }
+    }
 
     onMount(() => {
         if (isNew) cart.clear();
@@ -36,82 +52,95 @@
 
 <svelte:head><title>Pesanan {order.order_number}</title></svelte:head>
 
-<div class="min-h-screen bg-stone-50 pb-10">
-    <header class="bg-gradient-to-br from-brand-600 to-orange-500 px-4 pt-8 pb-16 text-center text-white">
+{#snippet row(label, value)}
+    <div class="flex justify-between gap-4 py-2.5">
+        <dt class="shrink-0 text-muted">{label}</dt>
+        <dd class="text-right text-ink">{value}</dd>
+    </div>
+{/snippet}
+
+<div class="min-h-dvh bg-paper pb-12">
+    <header class="mx-auto max-w-lg px-5 pt-[max(2.5rem,env(safe-area-inset-top))] pb-8 text-center">
         {#if isNew}
-            <div class="mx-auto mb-2 flex size-14 items-center justify-center rounded-full bg-white text-3xl" aria-hidden="true">✅</div>
-            <h1 class="text-xl font-bold">Pesanan terkirim!</h1>
-            <p class="mx-auto mt-1 max-w-xs text-sm text-white/90">Pesananmu akan dikonfirmasi via WhatsApp oleh kasir.</p>
+            <div class="mx-auto mb-5 flex size-16 animate-pop items-center justify-center rounded-full bg-leaf-600 text-white shadow-float" aria-hidden="true">
+                <Check size={30} strokeWidth={2.5} />
+            </div>
+            <h1 class="display text-[2rem] leading-tight text-ink">Pesanan terkirim</h1>
+            <p class="mx-auto mt-2 max-w-xs text-sm text-muted">Kasir akan mengonfirmasi pesananmu lewat WhatsApp sebentar lagi.</p>
         {:else}
-            <h1 class="text-xl font-bold">Status Pesanan</h1>
+            <h1 class="display text-[2rem] leading-tight text-ink">Status pesanan</h1>
         {/if}
-        <p class="mt-3 text-xs tracking-wide text-white/80 uppercase">Nomor order</p>
-        <p class="font-mono text-2xl font-black tracking-wider">{order.order_number}</p>
+        <button type="button" class="group mx-auto mt-5 inline-flex items-center gap-2 rounded-full border border-dashed border-line-strong bg-surface px-4 py-2" onclick={copyOrderNumber} aria-label="Salin nomor order {order.order_number}">
+            <span class="num font-mono text-base font-semibold tracking-wider text-ink">{order.order_number}</span>
+            <span class="text-faint group-hover:text-ink-soft">{#if copied}<Check size={15} />{:else}<Copy size={15} />{/if}</span>
+        </button>
     </header>
 
-    <main class="mx-auto -mt-10 max-w-lg space-y-4 px-4">
-        <section class="card p-4">
-            <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+    <main class="mx-auto max-w-lg space-y-4 px-4">
+        <section class="card p-5">
+            <div class="mb-5 flex flex-wrap items-center justify-between gap-2">
                 <StatusBadge status={order.status} label={order.status_label} />
                 <StatusBadge status={order.payment_status} label={order.payment_status_label} kind="payment" />
             </div>
             <StatusTimeline {order} />
             {#if !isFinal}
-                <p class="mt-4 text-center text-xs text-stone-400">Halaman ini diperbarui otomatis. Simpan link ini untuk cek status.</p>
+                <p class="flex items-center justify-center gap-1.5 border-t border-line pt-4 text-xs text-muted">
+                    <RefreshCw size={12} class="animate-spin [animation-duration:3s]" />Diperbarui otomatis · simpan link ini untuk cek status
+                </p>
             {/if}
         </section>
 
-        <section class="card p-4 text-sm">
-            <h2 class="mb-2 font-semibold">Ringkasan pesanan</h2>
-            <ul class="divide-y divide-stone-100">
+        <section class="card p-5 text-sm">
+            <h2 class="display mb-2 text-lg text-ink">Ringkasan</h2>
+            <ul class="divide-y divide-line">
                 {#each order.items ?? [] as item (item.id)}
-                    <li class="flex justify-between gap-3 py-2">
+                    <li class="flex justify-between gap-3 py-3">
                         <div class="min-w-0">
-                            <p>{item.product_name} <span class="text-stone-500">× {item.quantity}</span></p>
-                            {#if item.notes}<p class="text-xs text-stone-500">Catatan: {item.notes}</p>{/if}
+                            <p class="text-ink"><span class="num mr-1.5 text-muted">{item.quantity}×</span>{item.product_name}</p>
+                            {#if item.notes}<p class="mt-0.5 text-xs text-muted italic">“{item.notes}”</p>{/if}
                         </div>
-                        <p class="tabular-nums">{rupiah(item.subtotal)}</p>
+                        <p class="num text-ink">{rupiah(item.subtotal)}</p>
                     </li>
                 {/each}
             </ul>
             {#if order.discount > 0}
-                <div class="flex justify-between border-t border-stone-100 pt-2 text-stone-600">
-                    <span>Diskon</span><span class="tabular-nums">-{rupiah(order.discount)}</span>
+                <div class="flex justify-between border-t border-line py-2.5 text-leaf-600">
+                    <span>Diskon</span><span class="num">−{rupiah(order.discount)}</span>
                 </div>
             {/if}
-            <div class="flex justify-between border-t border-stone-200 pt-2 text-base font-bold">
-                <span>Total</span><span class="tabular-nums">{rupiah(order.total)}</span>
+            <div class="flex items-baseline justify-between border-t border-ink/80 pt-3">
+                <span class="font-semibold text-ink">Total</span><span class="num text-xl font-semibold text-ink">{rupiah(order.total)}</span>
             </div>
 
-            <dl class="mt-4 grid grid-cols-3 gap-x-3 gap-y-1.5 text-stone-600">
-                <dt class="text-stone-400">Nama</dt><dd class="col-span-2">{order.customer_name}</dd>
-                <dt class="text-stone-400">WhatsApp</dt><dd class="col-span-2">{order.whatsapp_number}</dd>
-                <dt class="text-stone-400">Pengambilan</dt><dd class="col-span-2">{order.fulfillment_label ?? '-'}</dd>
-                {#if order.address}<dt class="text-stone-400">Alamat</dt><dd class="col-span-2">{order.address}</dd>{/if}
-                {#if order.notes}<dt class="text-stone-400">Catatan</dt><dd class="col-span-2">{order.notes}</dd>{/if}
-                <dt class="text-stone-400">Waktu</dt><dd class="col-span-2">{dateTime(order.created_at)}</dd>
+            <dl class="mt-5 divide-y divide-line border-t border-line">
+                {@render row('Nama', order.customer_name)}
+                {@render row('WhatsApp', order.whatsapp_number)}
+                {@render row('Pengambilan', order.fulfillment_label ?? '-')}
+                {#if order.address}{@render row('Alamat', order.address)}{/if}
+                {#if order.notes}{@render row('Catatan', order.notes)}{/if}
+                {@render row('Waktu', dateTime(order.created_at))}
             </dl>
         </section>
 
         {#if paymentMethod || order.payment_method}
-            <section class="card space-y-2 p-4 text-sm">
-                <h2 class="font-semibold">Pembayaran</h2>
+            <section class="card space-y-3 p-5 text-sm">
+                <h2 class="display text-lg text-ink">Pembayaran</h2>
                 {#if order.payment_status === 'lunas'}
-                    <p class="text-emerald-700">Lunas{order.payment_method ? ` via ${order.payment_method.name}` : ''}. Terima kasih!</p>
+                    <p class="flex items-center gap-2 text-leaf-700"><Check size={16} />Lunas{order.payment_method ? ` via ${order.payment_method.name}` : ''}. Terima kasih!</p>
                 {:else if paymentMethod}
-                    <p class="text-stone-600">Rencana bayar: <strong>{paymentMethod.name}</strong></p>
+                    <p class="text-muted">Rencana bayar: <strong class="font-semibold text-ink">{paymentMethod.name}</strong></p>
                     {#if showPaymentInfo}<PaymentInfo method={paymentMethod} />{/if}
                 {/if}
             </section>
         {/if}
 
-        <div class="flex flex-col gap-2 sm:flex-row">
+        <div class="flex flex-col gap-2 pt-2 sm:flex-row">
             {#if storeChatUrl}
-                <a href={storeChatUrl} target="_blank" rel="noopener noreferrer" class="btn flex-1 bg-emerald-600 text-white hover:bg-emerald-700">
-                    💬 Chat toko via WhatsApp
+                <a href={storeChatUrl} target="_blank" rel="noopener noreferrer" class="btn-success min-h-12 flex-1">
+                    <MessageCircle size={18} />Chat toko via WhatsApp
                 </a>
             {/if}
-            <a href="/menu" class="btn-secondary flex-1">Pesan lagi</a>
+            <a href="/menu" class="btn-secondary min-h-12 flex-1">Pesan lagi</a>
         </div>
     </main>
 </div>

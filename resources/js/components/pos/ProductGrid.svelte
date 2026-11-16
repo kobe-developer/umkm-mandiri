@@ -1,4 +1,5 @@
 <script>
+    import Search from '@lucide/svelte/icons/search';
     import { rupiah } from '../../lib/format.js';
 
     /** Grid produk per kategori dengan pencarian. Produk habis abu-abu & tidak bisa dipilih. */
@@ -17,38 +18,45 @@
 </script>
 
 <div class="space-y-3">
-    <input type="search" class="input" placeholder="Cari produk…" bind:value={search} aria-label="Cari produk" />
+    <label class="relative block">
+        <span class="sr-only">Cari produk</span>
+        <Search size={18} class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-faint" />
+        <input type="search" class="input rounded-full pl-11" placeholder="Cari produk…" bind:value={search} />
+    </label>
 
-    <div class="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-        <button type="button" class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium {activeCategory === 'all' ? 'bg-stone-900 text-white' : 'bg-white text-stone-700 ring-1 ring-stone-200'}" onclick={() => (activeCategory = 'all')}>Semua</button>
+    <div class="scroll-x -mx-4 gap-2 px-4 sm:mx-0 sm:px-0">
+        <button type="button" class="chip {activeCategory === 'all' ? 'chip-active' : ''}" onclick={() => (activeCategory = 'all')}>Semua</button>
         {#each categories as category (category.id)}
-            <button type="button" class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium {activeCategory === category.id ? 'bg-stone-900 text-white' : 'bg-white text-stone-700 ring-1 ring-stone-200'}" onclick={() => (activeCategory = category.id)}>{category.name}</button>
+            <button type="button" class="chip {activeCategory === category.id ? 'chip-active' : ''}" onclick={() => (activeCategory = category.id)}>{category.name}</button>
         {/each}
     </div>
 
     {#if visible.length === 0}
-        <p class="py-8 text-center text-sm text-stone-500">Produk tidak ditemukan.</p>
+        <p class="py-12 text-center text-sm text-muted">Produk tidak ditemukan.</p>
     {:else}
-        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+        <div class="grid grid-cols-2 gap-2.5 pt-1 sm:grid-cols-3 xl:grid-cols-4">
             {#each visible as product (product.id)}
                 {@const qty = quantities[product.id] ?? 0}
                 <button
                     type="button"
                     disabled={product.is_sold_out}
                     onclick={() => onadd(product)}
-                    class="relative flex min-h-24 flex-col justify-between rounded-2xl border bg-white p-3 text-left shadow-sm transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-stone-100 disabled:opacity-60 {qty > 0 ? 'border-brand-500 ring-2 ring-brand-100' : 'border-stone-200 hover:border-stone-300'}"
+                    class="relative flex min-h-28 flex-col justify-between rounded-2xl border bg-surface p-3.5 text-left transition duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-paper disabled:opacity-55
+                        {qty > 0 ? 'border-ink ring-1 ring-ink' : 'border-line hover:border-line-strong hover:shadow-soft'}"
                 >
-                    <span class="text-sm leading-snug font-semibold text-stone-800">{product.name}</span>
-                    <span class="mt-2 flex items-end justify-between gap-1">
-                        <span class="text-sm font-bold text-brand-700 tabular-nums">{rupiah(product.price)}</span>
+                    <span class="line-clamp-2 pr-6 text-[14px] leading-snug font-semibold text-ink">{product.name}</span>
+                    <span class="mt-3 flex items-end justify-between gap-1">
+                        <span class="num text-[15px] font-semibold text-ink">{rupiah(product.price)}</span>
                         {#if product.is_sold_out}
-                            <span class="rounded-full bg-stone-300 px-2 py-0.5 text-[10px] font-bold text-stone-700 uppercase">Habis</span>
+                            <span class="rounded-full bg-paper-deep px-2 py-0.5 text-[11px] font-semibold text-muted">Habis</span>
                         {:else if product.track_stock}
-                            <span class="text-[11px] text-stone-500">Stok {product.stock}</span>
+                            <span class="num text-[11px] {product.stock <= 5 ? 'font-semibold text-amber-ink' : 'text-faint'}">Stok {product.stock}</span>
                         {/if}
                     </span>
                     {#if qty > 0}
-                        <span class="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white shadow">{qty}</span>
+                        {#key qty}
+                            <span class="num absolute top-2.5 right-2.5 flex size-6 animate-pop items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">{qty}</span>
+                        {/key}
                     {/if}
                 </button>
             {/each}

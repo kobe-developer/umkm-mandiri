@@ -1,6 +1,16 @@
 <script>
     import { useForm } from '@inertiajs/svelte';
+    import ShoppingBag from '@lucide/svelte/icons/shopping-bag';
+    import Bike from '@lucide/svelte/icons/bike';
+    import Banknote from '@lucide/svelte/icons/banknote';
+    import QrCode from '@lucide/svelte/icons/qr-code';
+    import Landmark from '@lucide/svelte/icons/landmark';
+    import Wallet from '@lucide/svelte/icons/wallet';
+    import CircleCheck from '@lucide/svelte/icons/circle-check';
+    import CircleAlert from '@lucide/svelte/icons/circle-alert';
+    import Send from '@lucide/svelte/icons/send';
     import PaymentInfo from './PaymentInfo.svelte';
+    import FlowHeader from './FlowHeader.svelte';
     import { rupiah, normalizePhone } from '../../lib/format.js';
     import { cart } from '../../lib/cart.svelte.js';
 
@@ -8,6 +18,7 @@
     let { productMap, settings, paymentMethods, blockedReason = null, onback } = $props();
 
     const CUSTOMER_KEY = 'umkm-customer-v1';
+    const PAYMENT_ICONS = { tunai: Banknote, qris: QrCode, transfer: Landmark, ewallet: Wallet };
 
     function rememberedCustomer() {
         try {
@@ -66,117 +77,134 @@
     }
 </script>
 
-<form class="mx-auto max-w-2xl px-4 pt-4 pb-36" onsubmit={submit} novalidate>
-    <div class="mb-4 flex items-center gap-2">
-        <button type="button" class="btn-ghost btn-sm text-lg" aria-label="Kembali ke keranjang" onclick={onback}>←</button>
-        <h2 class="text-lg font-bold">Checkout</h2>
-    </div>
+{#snippet choice(group, value, label, Icon, description = '')}
+    {@const checked = group === 'fulfillment' ? form.fulfillment === value : form.payment_method_id === value}
+    <label class="relative flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border bg-surface p-3.5 transition {checked ? 'border-ink ring-1 ring-ink' : 'border-line hover:border-line-strong'}">
+        {#if group === 'fulfillment'}
+            <input type="radio" name="fulfillment" {value} class="sr-only" bind:group={form.fulfillment} />
+        {:else}
+            <input type="radio" name="payment_method_id" {value} class="sr-only" bind:group={form.payment_method_id} />
+        {/if}
+        <span class="flex size-10 shrink-0 items-center justify-center rounded-full transition {checked ? 'bg-ink text-paper' : 'bg-paper-deep text-ink-soft'}">
+            <Icon size={19} />
+        </span>
+        <span class="min-w-0">
+            <span class="block text-sm font-semibold text-ink">{label}</span>
+            {#if description}<span class="block text-xs text-muted">{description}</span>{/if}
+        </span>
+    </label>
+{/snippet}
 
+<FlowHeader title="Checkout" step={2} backLabel="Kembali ke keranjang" {onback} />
+
+<form class="mx-auto max-w-2xl space-y-8 px-5 pt-5 pb-44" onsubmit={submit} novalidate>
     {#if form.errors.store || itemErrors.length}
-        <div class="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
-            {#if form.errors.store}<p>{form.errors.store}</p>{/if}
-            {#each itemErrors as message (message)}<p>{message}</p>{/each}
-            {#if itemErrors.length}
-                <button type="button" class="mt-1 font-semibold underline" onclick={onback}>Perbarui keranjang</button>
-            {/if}
+        <div class="flex gap-3 rounded-2xl bg-brand-50 p-4 text-sm text-brand-700" role="alert">
+            <CircleAlert size={18} class="mt-px shrink-0" />
+            <div>
+                {#if form.errors.store}<p>{form.errors.store}</p>{/if}
+                {#each itemErrors as message (message)}<p>{message}</p>{/each}
+                {#if itemErrors.length}
+                    <button type="button" class="mt-1 font-semibold underline underline-offset-2" onclick={onback}>Perbarui keranjang</button>
+                {/if}
+            </div>
         </div>
     {/if}
 
-    <section class="card space-y-4 p-4">
+    <section class="space-y-4" aria-labelledby="sec-pemesan">
+        <h2 id="sec-pemesan" class="display text-xl text-ink">Data pemesan</h2>
         <div>
-            <label class="label" for="customer_name">Nama <span class="text-red-600">*</span></label>
-            <input id="customer_name" class="input" bind:value={form.customer_name} minlength="2" maxlength="50" autocomplete="name" required />
+            <label class="label" for="customer_name">Nama</label>
+            <input id="customer_name" class="input" bind:value={form.customer_name} minlength="2" maxlength="50" autocomplete="name" placeholder="Nama panggilan" required />
             {#if form.errors.customer_name}<p class="error">{form.errors.customer_name}</p>{/if}
         </div>
-
         <div>
-            <label class="label" for="whatsapp_number">Nomor WhatsApp <span class="text-red-600">*</span></label>
-            <input id="whatsapp_number" class="input" type="tel" inputmode="tel" bind:value={form.whatsapp_number} placeholder="08xx / 62xx / +62xx" autocomplete="tel" required />
+            <label class="label" for="whatsapp_number">Nomor WhatsApp</label>
+            <input id="whatsapp_number" class="input num" type="tel" inputmode="tel" bind:value={form.whatsapp_number} placeholder="0812 3456 7890" autocomplete="tel" required />
             {#if form.errors.whatsapp_number}
                 <p class="error">{form.errors.whatsapp_number}</p>
             {:else if form.whatsapp_number && normalizedPhone}
-                <p class="mt-1 text-xs text-emerald-700">Akan dihubungi di {normalizedPhone}</p>
+                <p class="mt-1.5 flex items-center gap-1 text-xs text-leaf-600"><CircleCheck size={13} />Akan dihubungi di +{normalizedPhone}</p>
             {:else if form.whatsapp_number}
-                <p class="mt-1 text-xs text-amber-700">Format nomor belum valid (contoh: 081234567890).</p>
+                <p class="mt-1.5 text-xs text-amber-ink">Format nomor belum valid (contoh: 081234567890).</p>
+            {:else}
+                <p class="hint">Untuk konfirmasi pesanan. Format 08xx, 62xx, atau +62xx.</p>
             {/if}
         </div>
+    </section>
 
+    <section class="space-y-3" aria-labelledby="sec-ambil">
+        <h2 id="sec-ambil" class="display text-xl text-ink">Pengambilan</h2>
         <fieldset>
-            <legend class="label">Tipe pengambilan <span class="text-red-600">*</span></legend>
-            <div class="grid grid-cols-2 gap-2">
-                {#if settings.allow_pickup}
-                    <label class="flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm {form.fulfillment === 'pickup' ? 'border-brand-500 bg-brand-50' : 'border-stone-300'}">
-                        <input type="radio" name="fulfillment" value="pickup" class="accent-brand-600" bind:group={form.fulfillment} />
-                        Ambil Sendiri
-                    </label>
-                {/if}
-                {#if settings.allow_delivery}
-                    <label class="flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm {form.fulfillment === 'delivery' ? 'border-brand-500 bg-brand-50' : 'border-stone-300'}">
-                        <input type="radio" name="fulfillment" value="delivery" class="accent-brand-600" bind:group={form.fulfillment} />
-                        Diantar
-                    </label>
-                {/if}
+            <legend class="sr-only">Tipe pengambilan</legend>
+            <div class="grid grid-cols-2 gap-2.5">
+                {#if settings.allow_pickup}{@render choice('fulfillment', 'pickup', 'Ambil sendiri', ShoppingBag, 'Di toko')}{/if}
+                {#if settings.allow_delivery}{@render choice('fulfillment', 'delivery', 'Diantar', Bike, 'Ke lokasimu')}{/if}
             </div>
             {#if form.fulfillment === 'delivery' && settings.delivery_note}
-                <p class="mt-1 text-xs text-emerald-700">🛵 {settings.delivery_note}</p>
+                <p class="hint">{settings.delivery_note}</p>
             {/if}
             {#if form.errors.fulfillment}<p class="error">{form.errors.fulfillment}</p>{/if}
         </fieldset>
 
         {#if form.fulfillment === 'delivery'}
-            <div>
-                <label class="label" for="address">Alamat / patokan <span class="text-red-600">*</span></label>
+            <div class="animate-fade-in">
+                <label class="label" for="address">Alamat / patokan</label>
                 <textarea id="address" class="input" rows="2" maxlength="255" bind:value={form.address} placeholder="Misal: Kos Melati kamar 5, depan gerbang belakang" required></textarea>
                 {#if form.errors.address}<p class="error">{form.errors.address}</p>{/if}
             </div>
         {/if}
     </section>
 
-    <section class="card mt-4 space-y-3 p-4">
+    <section class="space-y-3" aria-labelledby="sec-bayar">
+        <div>
+            <h2 id="sec-bayar" class="display text-xl text-ink">Rencana pembayaran</h2>
+            <p class="mt-0.5 text-[13px] text-muted">Dibayar saat konfirmasi / pengambilan pesanan.</p>
+        </div>
         <fieldset>
-            <legend class="label">Rencana metode bayar <span class="text-red-600">*</span></legend>
+            <legend class="sr-only">Rencana metode bayar</legend>
             {#if paymentMethods.length === 0}
-                <p class="text-sm text-stone-500">Belum ada metode pembayaran untuk order online.</p>
+                <p class="text-sm text-muted">Belum ada metode pembayaran untuk order online.</p>
             {/if}
-            <div class="grid gap-2 sm:grid-cols-2">
+            <div class="grid grid-cols-2 gap-2.5">
                 {#each paymentMethods as method (method.id)}
-                    <label class="flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm {form.payment_method_id === method.id ? 'border-brand-500 bg-brand-50' : 'border-stone-300'}">
-                        <input type="radio" name="payment_method_id" value={method.id} class="accent-brand-600" bind:group={form.payment_method_id} />
-                        {method.name}
-                    </label>
+                    {@render choice('payment', method.id, method.name, PAYMENT_ICONS[method.type] ?? Wallet)}
                 {/each}
             </div>
             {#if form.errors.payment_method_id}<p class="error">{form.errors.payment_method_id}</p>{/if}
         </fieldset>
         <PaymentInfo method={selectedMethod} />
-        <p class="text-xs text-stone-500">Pembayaran dilakukan saat konfirmasi / pengambilan pesanan.</p>
     </section>
 
-    <section class="card mt-4 space-y-3 p-4">
+    <section class="space-y-4" aria-labelledby="sec-catatan">
+        <h2 id="sec-catatan" class="display text-xl text-ink">Catatan <span class="font-sans text-sm font-normal text-faint">opsional</span></h2>
         <div>
-            <label class="label" for="notes">Catatan untuk toko <span class="font-normal text-stone-400">(opsional)</span></label>
+            <label class="sr-only" for="notes">Catatan untuk toko</label>
             <textarea id="notes" class="input" rows="2" maxlength="255" bind:value={form.notes} placeholder="Misal: tolong sendok plastik"></textarea>
             {#if form.errors.notes}<p class="error">{form.errors.notes}</p>{/if}
         </div>
-        <label class="flex items-start gap-2 text-sm text-stone-700">
-            <input type="checkbox" class="checkbox mt-0.5" bind:checked={form.consent} />
+        <label class="flex cursor-pointer items-start gap-3 rounded-2xl bg-surface p-4 text-sm text-ink-soft ring-1 ring-line">
+            <input type="checkbox" class="checkbox mt-px" bind:checked={form.consent} />
             <span>Saya setuju nomor WA dipakai untuk konfirmasi pesanan dan pengiriman struk.</span>
         </label>
         {#if form.errors.consent}<p class="error">{form.errors.consent}</p>{/if}
     </section>
 
-    <div class="fixed inset-x-0 bottom-0 z-30 border-t border-stone-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <div class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 px-4 pt-3 backdrop-blur-xl">
         <div class="mx-auto max-w-2xl">
-            <div class="mb-2 flex justify-between text-sm">
-                <span class="text-stone-500">{itemCount} item</span>
-                <span class="font-bold tabular-nums">Total {rupiah(subtotal)}</span>
+            <div class="mb-3 flex items-baseline justify-between px-1">
+                <span class="text-sm text-muted">{itemCount} item</span>
+                <span class="num text-lg font-semibold text-ink">{rupiah(subtotal)}</span>
             </div>
             {#if blockedReason}
-                <p class="mb-2 text-center text-sm font-semibold text-red-600">{blockedReason}</p>
+                <p class="mb-2 text-center text-sm font-semibold text-brand-600">{blockedReason}</p>
             {/if}
-            <button type="submit" class="btn-primary w-full py-3 text-base" disabled={form.processing || !!blockedReason || itemCount === 0 || !form.consent}>
-                {form.processing ? 'Mengirim pesanan…' : 'Kirim pesanan'}
+            <button type="submit" class="btn-accent min-h-13 w-full text-base" disabled={form.processing || !!blockedReason || itemCount === 0 || !form.consent}>
+                {#if form.processing}Mengirim pesanan…{:else}<Send size={18} />Kirim pesanan{/if}
             </button>
+            {#if !form.consent && !form.processing}
+                <p class="mt-2 text-center text-xs text-muted">Centang persetujuan WA untuk mengirim pesanan.</p>
+            {/if}
         </div>
     </div>
 </form>

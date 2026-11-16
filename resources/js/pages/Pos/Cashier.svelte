@@ -4,6 +4,9 @@
     import TicketItems from '../../components/pos/TicketItems.svelte';
     import TicketCheckout from '../../components/pos/TicketCheckout.svelte';
     import ErrorSummary from '../../components/pos/ErrorSummary.svelte';
+    import Receipt from '@lucide/svelte/icons/receipt';
+    import ChevronUp from '@lucide/svelte/icons/chevron-up';
+    import X from '@lucide/svelte/icons/x';
     import { rupiah } from '../../lib/format.js';
 
     let { categories, products, paymentMethods, channels } = $props();
@@ -97,11 +100,12 @@
 
 <svelte:head><title>Kasir</title></svelte:head>
 
-{#snippet ticket()}
+{#snippet ticket(closeable = false)}
     <div class="space-y-3">
-        <div class="flex items-center justify-between">
-            <h2 class="font-bold">Pesanan</h2>
-            {#if cart.length > 0}<button type="button" class="text-xs font-medium text-red-600" onclick={clearTicket}>Kosongkan</button>{/if}
+        <div class="flex items-center gap-2">
+            <h2 class="display flex-1 text-xl text-ink">Pesanan</h2>
+            {#if cart.length > 0}<button type="button" class="btn-ghost btn-sm text-muted hover:text-brand-600" onclick={clearTicket}>Kosongkan</button>{/if}
+            {#if closeable}<button type="button" class="btn-icon -mr-2 size-10" aria-label="Tutup pesanan" onclick={() => (ticketOpen = false)}><X size={20} /></button>{/if}
         </div>
         <ErrorSummary errors={form.errors} />
         <TicketItems {cart} {maxFor} onqty={setQty} onnotes={setNotes} />
@@ -109,20 +113,22 @@
     </div>
 {/snippet}
 
-<div class="lg:grid lg:grid-cols-[1fr_380px] lg:gap-5">
-    <section class="space-y-3">
+<div class="lg:grid lg:grid-cols-[1fr_380px] lg:gap-6">
+    <section class="space-y-4">
         <div class="flex flex-wrap items-center gap-2">
-            <div class="flex rounded-xl bg-stone-100 p-1">
+            <div class="segmented" role="tablist" aria-label="Kanal">
                 {#each channels as channel (channel.value)}
                     <button
                         type="button"
-                        class="rounded-lg px-4 py-2 text-sm font-semibold {form.channel === channel.value ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600'}"
+                        role="tab"
+                        aria-selected={form.channel === channel.value}
+                        class="segment {form.channel === channel.value ? 'segment-active' : ''}"
                         onclick={() => (form.channel = channel.value)}
                     >{channel.label}</button>
                 {/each}
             </div>
             {#if form.channel === 'dine_in'}
-                <input class="input w-28" placeholder="No. meja" maxlength="10" bind:value={form.table_number} aria-label="Nomor meja" />
+                <input class="input num min-h-11 w-28 rounded-full text-center" placeholder="No. meja" maxlength="10" bind:value={form.table_number} aria-label="Nomor meja" />
             {/if}
         </div>
 
@@ -131,7 +137,7 @@
 
     <!-- Tiket desktop/tablet besar -->
     <aside class="hidden lg:block">
-        <div class="card sticky top-5 max-h-[calc(100vh-2.5rem)] overflow-y-auto p-4">
+        <div class="card sticky top-8 max-h-[calc(100dvh-4rem)] overflow-y-auto p-5 shadow-soft">
             {@render ticket()}
         </div>
     </aside>
@@ -142,20 +148,25 @@
     {#if cart.length > 0 && !ticketOpen}
         <button
             type="button"
-            class="fixed inset-x-3 bottom-20 z-30 flex items-center justify-between rounded-2xl bg-brand-600 px-4 py-3 text-white shadow-lg"
+            class="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 flex animate-sheet-up items-center gap-3 rounded-full bg-ink py-2 pr-5 pl-2 text-paper shadow-float"
             onclick={() => (ticketOpen = true)}
         >
-            <span class="text-sm font-semibold">{itemCount} item · Lihat pesanan</span>
-            <span class="font-bold tabular-nums">{rupiah(total)}</span>
+            <span class="relative flex size-10 items-center justify-center rounded-full bg-white/10">
+                <Receipt size={18} />
+                <span class="num absolute -top-0.5 -right-0.5 min-w-5 rounded-full bg-brand-500 px-1 text-center text-[11px] leading-5 font-bold text-white">{itemCount}</span>
+            </span>
+            <span class="flex-1 text-left text-sm font-semibold">Lihat pesanan</span>
+            <span class="num font-semibold">{rupiah(total)}</span>
+            <ChevronUp size={18} class="opacity-60" />
         </button>
     {/if}
     {#if ticketOpen}
-        <div class="fixed inset-0 z-40 bg-black/40" role="presentation" onclick={() => (ticketOpen = false)}></div>
-        <div class="fixed inset-x-0 bottom-0 z-50 max-h-[90vh] overflow-y-auto rounded-t-3xl bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl">
-            <div class="mb-2 flex justify-center">
-                <button type="button" class="h-1.5 w-12 rounded-full bg-stone-300" aria-label="Tutup pesanan" onclick={() => (ticketOpen = false)}></button>
+        <div class="fixed inset-0 z-40 animate-fade-in bg-ink/40 backdrop-blur-[2px]" role="presentation" onclick={() => (ticketOpen = false)}></div>
+        <div class="fixed inset-x-0 bottom-0 z-50 max-h-[92dvh] animate-sheet-up overflow-y-auto rounded-t-[1.75rem] bg-surface px-5 pt-2.5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-float" role="dialog" aria-modal="true" aria-label="Pesanan">
+            <div class="mb-1 flex items-center justify-center">
+                <span class="h-1 w-10 rounded-full bg-line-strong" aria-hidden="true"></span>
             </div>
-            {@render ticket()}
+            {@render ticket(true)}
         </div>
     {/if}
 </div>

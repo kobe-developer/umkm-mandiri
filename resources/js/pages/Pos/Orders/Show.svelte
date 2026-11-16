@@ -6,6 +6,14 @@
     import PayModal from '../../../components/pos/PayModal.svelte';
     import ReasonModal from '../../../components/pos/ReasonModal.svelte';
     import EditItemsModal from '../../../components/pos/EditItemsModal.svelte';
+    import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+    import Check from '@lucide/svelte/icons/check';
+    import Banknote from '@lucide/svelte/icons/banknote';
+    import MessageCircle from '@lucide/svelte/icons/message-circle';
+    import Printer from '@lucide/svelte/icons/printer';
+    import ExternalLink from '@lucide/svelte/icons/external-link';
+    import ArrowRight from '@lucide/svelte/icons/arrow-right';
+    import SquarePen from '@lucide/svelte/icons/square-pen';
     import { dateTime } from '../../../lib/format.js';
 
     let { order, statusUrl, whatsappLink, paymentMethods, products, isOnline } = $props();
@@ -36,78 +44,94 @@
 
 <svelte:head><title>Order {order.order_number}</title></svelte:head>
 
-<div class="mb-4 flex flex-wrap items-center gap-2">
-    <Link href={isOnline ? '/pos/online' : '/pos/orders'} class="btn-ghost btn-sm">← Kembali</Link>
-    <h1 class="text-xl font-bold">{order.order_number}</h1>
-    <StatusBadge status={order.status} label={order.status_label} />
-    <StatusBadge kind="payment" status={order.payment_status} label={order.payment_status_label} />
+{#snippet info(label, value)}
+    <div class="flex justify-between gap-4 py-2.5"><dt class="shrink-0 text-muted">{label}</dt><dd class="text-right font-medium text-ink">{value}</dd></div>
+{/snippet}
+
+<div class="mb-6">
+    <Link href={isOnline ? '/pos/online' : '/pos/orders'} class="-ml-1 mb-3 inline-flex min-h-9 items-center gap-1 rounded-full pr-3 pl-1 text-sm font-medium text-muted hover:text-ink">
+        <ChevronLeft size={18} />{isOnline ? 'Order online' : 'Transaksi'}
+    </Link>
+    <h1 class="display num text-[1.75rem] leading-tight text-ink sm:text-[2rem]">{order.order_number}</h1>
+    <div class="mt-2 flex flex-wrap items-center gap-1.5">
+        <StatusBadge status={order.status} label={order.status_label} />
+        <StatusBadge kind="payment" status={order.payment_status} label={order.payment_status_label} />
+        <span class="ml-1 text-xs text-muted">{order.channel_label}{order.table_number ? ` · Meja ${order.table_number}` : ''}</span>
+    </div>
 </div>
 
 <ErrorSummary errors={page.props.errors} />
 
-<div class="grid gap-4 lg:grid-cols-[1fr_340px]">
-    <section class="card p-4">
-        <div class="mb-2 flex items-center justify-between">
-            <h2 class="font-semibold">Item</h2>
-            {#if isOnline && isNew}
-                <button type="button" class="btn-secondary btn-sm" onclick={() => (editOpen = true)}>Ubah item</button>
-            {/if}
-        </div>
-        <OrderItemsTable {order} />
-        {#if order.notes}<p class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">Catatan: {order.notes}</p>{/if}
-    </section>
-
-    <aside class="space-y-4">
-        <section class="card space-y-2 p-4 text-sm">
-            <div class="flex justify-between"><span class="text-stone-500">Kanal</span><span class="font-medium">{order.channel_label}</span></div>
-            {#if order.table_number}<div class="flex justify-between"><span class="text-stone-500">Meja</span><span class="font-medium">{order.table_number}</span></div>{/if}
-            {#if order.customer_name}<div class="flex justify-between"><span class="text-stone-500">Pelanggan</span><span class="font-medium">{order.customer_name}</span></div>{/if}
-            {#if order.whatsapp_number}<div class="flex justify-between"><span class="text-stone-500">WhatsApp</span><span class="font-medium">+{order.whatsapp_number}</span></div>{/if}
-            {#if order.fulfillment_label}<div class="flex justify-between"><span class="text-stone-500">Pengambilan</span><span class="font-medium">{order.fulfillment_label}</span></div>{/if}
-            {#if order.address}<div><span class="text-stone-500">Alamat/patokan</span><p class="font-medium">{order.address}</p></div>{/if}
-            {#if order.planned_payment_method}<div class="flex justify-between"><span class="text-stone-500">Rencana bayar</span><span class="font-medium">{order.planned_payment_method.name}</span></div>{/if}
-            {#if order.payment_method}<div class="flex justify-between"><span class="text-stone-500">Dibayar via</span><span class="font-medium">{order.payment_method.name}</span></div>{/if}
-            {#if order.cashier}<div class="flex justify-between"><span class="text-stone-500">Kasir</span><span class="font-medium">{order.cashier.name}</span></div>{/if}
-            <div class="flex justify-between"><span class="text-stone-500">Dibuat</span><span>{dateTime(order.created_at)}</span></div>
-            {#if order.paid_at}<div class="flex justify-between"><span class="text-stone-500">Dibayar</span><span>{dateTime(order.paid_at)}</span></div>{/if}
-            {#if order.completed_at}<div class="flex justify-between"><span class="text-stone-500">Selesai</span><span>{dateTime(order.completed_at)}</span></div>{/if}
-            {#if order.cancel_reason}<p class="rounded-xl bg-red-50 px-3 py-2 text-red-700">{order.voided_at ? 'Void' : 'Dibatalkan'}: {order.cancel_reason}</p>{/if}
-        </section>
-
-        <section class="card space-y-2 p-4">
-            {#if canPay && !hasShift}
-                <p class="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">Buka shift untuk mencatat pembayaran. <Link href="/pos/shift" class="font-semibold underline">Buka shift</Link></p>
-            {/if}
-            {#if isNew}
-                <button type="button" class="btn-primary w-full" disabled={busy} onclick={() => post('advance')}>✓ Konfirmasi order</button>
-            {:else if canAdvance}
-                <button type="button" class="btn-primary w-full" disabled={busy} onclick={() => post('advance')}>Tandai {order.next_status_label}</button>
-            {/if}
-            {#if canPay}
-                <button type="button" class="btn-success w-full" disabled={!hasShift} onclick={() => (payOpen = true)}>💵 Tandai bayar</button>
-            {/if}
-            {#if canComplete}
-                <button type="button" class="btn-secondary w-full" disabled={busy} onclick={() => post('complete')}>Langsung selesai</button>
-            {/if}
-            {#if !isFinal && isUnpaid && nextIsComplete}
-                <p class="text-xs text-stone-500">Order harus lunas sebelum ditandai selesai.</p>
-            {/if}
-            {#if whatsappLink}
-                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" class="btn w-full bg-[#25D366] text-white hover:brightness-95">💬 Chat WA</a>
-            {/if}
-            <div class="grid grid-cols-2 gap-2">
-                <Link href={`${base}/struk`} class="btn-secondary">🧾 Struk</Link>
-                {#if statusUrl}
-                    <a href={statusUrl} target="_blank" rel="noopener noreferrer" class="btn-secondary">Halaman status</a>
+<div class="grid gap-3 lg:grid-cols-[1fr_340px] lg:items-start">
+    <div class="space-y-3">
+        <section class="card p-4 sm:p-5">
+            <div class="mb-1 flex items-center justify-between">
+                <h2 class="font-semibold text-ink">Item</h2>
+                {#if isOnline && isNew}
+                    <button type="button" class="btn-secondary btn-sm" onclick={() => (editOpen = true)}><SquarePen size={14} />Ubah item</button>
                 {/if}
             </div>
-            {#if !isFinal && isUnpaid}
-                <button type="button" class="btn-danger w-full" onclick={() => (cancelOpen = true)}>{isNew ? 'Tolak order' : 'Batalkan order'}</button>
-            {/if}
-            {#if isPaid}
-                <button type="button" class="btn-danger w-full" onclick={() => (voidOpen = true)}>Void / refund{isOwner ? '' : ' (PIN owner)'}</button>
-            {/if}
+            <OrderItemsTable {order} />
+            {#if order.notes}<p class="mt-4 rounded-xl bg-amber-soft px-3.5 py-2.5 text-sm text-amber-ink">Catatan: {order.notes}</p>{/if}
         </section>
+
+        <section class="card px-4 py-2 text-sm sm:px-5">
+            <dl class="divide-y divide-line">
+                {@render info('Kanal', order.channel_label)}
+                {#if order.table_number}{@render info('Meja', order.table_number)}{/if}
+                {#if order.customer_name}{@render info('Pelanggan', order.customer_name)}{/if}
+                {#if order.whatsapp_number}{@render info('WhatsApp', `+${order.whatsapp_number}`)}{/if}
+                {#if order.fulfillment_label}{@render info('Pengambilan', order.fulfillment_label)}{/if}
+                {#if order.address}{@render info('Alamat/patokan', order.address)}{/if}
+                {#if order.planned_payment_method}{@render info('Rencana bayar', order.planned_payment_method.name)}{/if}
+                {#if order.payment_method}{@render info('Dibayar via', order.payment_method.name)}{/if}
+                {#if order.cashier}{@render info('Kasir', order.cashier.name)}{/if}
+                {@render info('Dibuat', dateTime(order.created_at))}
+                {#if order.paid_at}{@render info('Dibayar', dateTime(order.paid_at))}{/if}
+                {#if order.completed_at}{@render info('Selesai', dateTime(order.completed_at))}{/if}
+            </dl>
+            {#if order.cancel_reason}<p class="mb-3 rounded-xl bg-brand-50 px-3.5 py-2.5 text-brand-700">{order.voided_at ? 'Void' : 'Dibatalkan'}: {order.cancel_reason}</p>{/if}
+        </section>
+    </div>
+
+    <aside class="card space-y-2.5 p-4 sm:p-5 lg:sticky lg:top-8">
+        <h2 class="eyebrow pb-1">Tindakan</h2>
+        {#if canPay && !hasShift}
+            <p class="rounded-xl bg-amber-soft px-3.5 py-2.5 text-xs text-amber-ink">Buka shift untuk mencatat pembayaran. <Link href="/pos/shift" class="font-semibold underline underline-offset-2">Buka shift</Link></p>
+        {/if}
+        {#if isNew}
+            <button type="button" class="btn-accent min-h-12 w-full" disabled={busy} onclick={() => post('advance')}><Check size={18} strokeWidth={2.5} />Konfirmasi order</button>
+        {:else if canAdvance}
+            <button type="button" class="btn-primary min-h-12 w-full" disabled={busy} onclick={() => post('advance')}>Tandai {order.next_status_label}<ArrowRight size={17} /></button>
+        {/if}
+        {#if canPay}
+            <button type="button" class="btn-success min-h-12 w-full" disabled={!hasShift} onclick={() => (payOpen = true)}><Banknote size={18} />Tandai bayar</button>
+        {/if}
+        {#if canComplete}
+            <button type="button" class="btn-secondary w-full" disabled={busy} onclick={() => post('complete')}>Langsung selesai</button>
+        {/if}
+        {#if !isFinal && isUnpaid && nextIsComplete}
+            <p class="text-xs text-muted">Order harus lunas sebelum ditandai selesai.</p>
+        {/if}
+        {#if whatsappLink}
+            <a href={whatsappLink} target="_blank" rel="noopener noreferrer" class="btn-secondary w-full"><MessageCircle size={17} class="text-leaf-600" />Chat WhatsApp</a>
+        {/if}
+        <div class="grid grid-cols-2 gap-2">
+            <Link href={`${base}/struk`} class="btn-secondary"><Printer size={16} />Struk</Link>
+            {#if statusUrl}
+                <a href={statusUrl} target="_blank" rel="noopener noreferrer" class="btn-secondary"><ExternalLink size={16} />Status</a>
+            {/if}
+        </div>
+        {#if (!isFinal && isUnpaid) || isPaid}
+            <div class="space-y-2 border-t border-line pt-3">
+                {#if !isFinal && isUnpaid}
+                    <button type="button" class="btn-danger w-full" onclick={() => (cancelOpen = true)}>{isNew ? 'Tolak order' : 'Batalkan order'}</button>
+                {/if}
+                {#if isPaid}
+                    <button type="button" class="btn-danger w-full" onclick={() => (voidOpen = true)}>Void / refund{isOwner ? '' : ' (PIN owner)'}</button>
+                {/if}
+            </div>
+        {/if}
     </aside>
 </div>
 

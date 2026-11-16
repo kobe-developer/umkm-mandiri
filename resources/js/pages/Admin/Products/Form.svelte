@@ -1,6 +1,10 @@
 <script>
     import { Link, useForm } from '@inertiajs/svelte';
     import { untrack } from 'svelte';
+    import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+    import ArrowRight from '@lucide/svelte/icons/arrow-right';
+    import ImageUp from '@lucide/svelte/icons/image-up';
+    import Drumstick from '@lucide/svelte/icons/drumstick';
     import PageHeader from '../../../components/PageHeader.svelte';
     import MoneyInput from '../../../components/MoneyInput.svelte';
     import Toggle from '../../../components/Toggle.svelte';
@@ -56,12 +60,12 @@
 
 <PageHeader title={isEdit ? `Ubah ${product.name}` : 'Tambah Produk'} subtitle={isEdit ? 'Perubahan harga tidak mengubah harga di transaksi lama.' : ''}>
     {#snippet actions()}
-        <Link href="/admin/produk" class="btn-ghost">← Kembali</Link>
+        <Link href="/admin/produk" class="btn-ghost -ml-2 sm:ml-0"><ArrowLeft size={17} />Kembali</Link>
     {/snippet}
 </PageHeader>
 
 <form class="grid gap-4 lg:grid-cols-3" onsubmit={submit}>
-    <div class="card space-y-4 p-5 lg:col-span-2">
+    <div class="card space-y-5 p-4 sm:p-5 lg:col-span-2">
         <div class="grid gap-4 sm:grid-cols-2">
             <div>
                 <label class="label" for="name">Nama produk</label>
@@ -94,7 +98,7 @@
             {#if form.errors.description}<p class="error">{form.errors.description}</p>{/if}
         </div>
 
-        <div class="space-y-3 border-t border-stone-100 pt-4">
+        <div class="divide-y divide-line border-t border-line [&>*]:py-3.5 [&>*:last-child]:pb-0">
             <Toggle bind:checked={form.is_active} label="Aktif" description="Produk nonaktif tidak muncul di kasir maupun menu online." />
             <Toggle bind:checked={form.show_online} label="Tampil di menu online" description="Matikan untuk produk yang hanya dijual di tempat." />
             <Toggle bind:checked={form.is_available} label="Tersedia" description="Matikan untuk menandai produk habis (kasir juga bisa)." />
@@ -102,18 +106,20 @@
         </div>
 
         {#if form.track_stock}
-            <div class="grid gap-4 rounded-xl bg-stone-50 p-4 sm:grid-cols-2">
+            <div class="grid gap-4 rounded-xl bg-paper p-4 sm:grid-cols-2">
                 <div>
                     <label class="label" for="minimum">Batas stok minimum</label>
                     <input id="minimum" type="number" min="0" class="input" bind:value={form.stock_minimum} />
-                    <p class="mt-1 text-xs text-stone-500">Muncul peringatan "stok menipis" di dashboard.</p>
+                    <p class="hint">Muncul peringatan "stok menipis" di dashboard.</p>
                     {#if form.errors.stock_minimum}<p class="error">{form.errors.stock_minimum}</p>{/if}
                 </div>
                 {#if isEdit}
                     <div>
                         <p class="label">Stok saat ini</p>
-                        <p class="text-2xl font-bold tabular-nums">{product.stock}</p>
-                        <Link href="/admin/stok" class="text-sm font-semibold text-brand-700 underline">Tambah / sesuaikan stok →</Link>
+                        <p class="num text-2xl leading-tight font-semibold text-ink">{product.stock}</p>
+                        <Link href="/admin/stok" class="mt-1 inline-flex min-h-9 items-center gap-1 text-sm font-medium text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink">
+                            Tambah / sesuaikan stok <ArrowRight size={14} />
+                        </Link>
                     </div>
                 {:else}
                     <div>
@@ -127,20 +133,25 @@
     </div>
 
     <div class="space-y-4">
-        <div class="card p-5">
+        <div class="card p-4 sm:p-5">
             <p class="label">Foto (opsional)</p>
-            <div class="mb-3 aspect-square w-full overflow-hidden rounded-xl bg-stone-100">
+            <div class="mb-3 aspect-[4/3] w-full overflow-hidden rounded-xl bg-paper-deep sm:aspect-square">
                 {#if preview}
                     <img src={preview} alt="Pratinjau foto" class="size-full object-cover" />
                 {:else}
-                    <div class="flex size-full items-center justify-center text-5xl" aria-hidden="true">🍗</div>
+                    <div class="flex size-full items-center justify-center text-faint" aria-hidden="true"><Drumstick size={44} strokeWidth={1.25} /></div>
                 {/if}
             </div>
-            <input type="file" accept="image/jpeg,image/png,image/webp" class="block w-full text-sm" onchange={onPhoto} aria-label="Pilih foto" />
-            <p class="mt-1 text-xs text-stone-500">JPG/PNG/WebP, maks 5 MB. Otomatis dikompres.</p>
-            {#if preview}
-                <button type="button" class="btn-ghost btn-sm mt-2 text-red-600" onclick={removePhoto}>Hapus foto</button>
-            {/if}
+            <div class="flex flex-wrap items-center gap-2">
+                <label class="btn-secondary btn-sm cursor-pointer">
+                    <ImageUp size={15} /><span>{preview ? 'Ganti foto' : 'Pilih foto'}</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp" class="sr-only" onchange={onPhoto} aria-label="Pilih foto" />
+                </label>
+                {#if preview}
+                    <button type="button" class="btn-danger btn-sm" onclick={removePhoto}>Hapus foto</button>
+                {/if}
+            </div>
+            <p class="hint">JPG/PNG/WebP, maks 5 MB. Otomatis dikompres.</p>
             {#if form.errors.photo}<p class="error">{form.errors.photo}</p>{/if}
         </div>
 

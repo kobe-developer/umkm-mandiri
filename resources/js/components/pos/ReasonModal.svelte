@@ -21,7 +21,7 @@
         {#if presets.length > 0}
             <div class="flex flex-wrap gap-1.5">
                 {#each presets as preset (preset)}
-                    <button type="button" class="btn-secondary btn-sm" onclick={() => (form.reason = preset)}>{preset}</button>
+                    <button type="button" class="chip {form.reason === preset ? 'chip-active' : ''}" onclick={() => (form.reason = preset)}>{preset}</button>
                 {/each}
             </div>
         {/if}
@@ -32,8 +32,8 @@
         {#if requirePin}
             <div>
                 <label class="label" for="pin">PIN owner</label>
-                <input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="6" class="input tracking-widest" bind:value={form.pin} />
-                <p class="mt-1 text-xs text-stone-500">Minta owner memasukkan PIN untuk menyetujui.</p>
+                <input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="6" class="input num text-center text-xl tracking-[0.5em]" bind:value={form.pin} />
+                <p class="hint">Minta owner memasukkan PIN untuk menyetujui.</p>
             </div>
         {/if}
     </div>

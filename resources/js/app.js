@@ -16,5 +16,5 @@ createInertiaApp({
         return page();
     },
     layout: (name) => (STANDALONE.some((pattern) => pattern.test(name)) ? undefined : AppLayout),
-    progress: { color: '#dc2626' },
+    progress: { color: '#b93a1a' },
 });

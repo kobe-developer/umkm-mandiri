@@ -4,6 +4,11 @@
     import ProductCard from '../../components/menu/ProductCard.svelte';
     import CartView from '../../components/menu/CartView.svelte';
     import CheckoutForm from '../../components/menu/CheckoutForm.svelte';
+    import Search from '@lucide/svelte/icons/search';
+    import SearchX from '@lucide/svelte/icons/search-x';
+    import ShoppingBag from '@lucide/svelte/icons/shopping-bag';
+    import ArrowRight from '@lucide/svelte/icons/arrow-right';
+    import Info from '@lucide/svelte/icons/info';
     import EmptyState from '../../components/EmptyState.svelte';
     import { rupiah } from '../../lib/format.js';
     import { cart } from '../../lib/cart.svelte.js';
@@ -46,7 +51,7 @@
                 const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
                 if (visible) activeCategory = Number(visible.target.dataset.category);
             },
-            { rootMargin: '-120px 0px -60% 0px' },
+            { rootMargin: '-140px 0px -60% 0px' },
         );
         document.querySelectorAll('[data-category]').forEach((el) => observer.observe(el));
         return () => observer.disconnect();
@@ -61,6 +66,7 @@
     function scrollToCategory(id) {
         activeCategory = id;
         document.getElementById(`kategori-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById(`tab-${id}`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
 </script>
 
@@ -69,7 +75,7 @@
     <meta name="description" content="Pesan online {storeSettings.name}. {storeSettings.delivery_note ?? ''}" />
 </svelte:head>
 
-<div class="min-h-screen bg-stone-50">
+<div class="min-h-dvh bg-paper">
     {#if step === 'cart'}
         <CartView {productMap} settings={storeSettings} {blockedReason} onback={() => goTo('menu')} oncheckout={() => goTo('checkout')} />
     {:else if step === 'checkout'}
@@ -78,40 +84,57 @@
         <MenuHeader settings={storeSettings} />
 
         {#if blockedReason}
-            <div class="border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-center text-sm text-amber-800" role="status">
-                <strong>{blockedReason}.</strong> Menu tetap bisa dilihat, tapi pesanan belum bisa dikirim.
+            <div class="mx-auto max-w-2xl px-5 pb-4" role="status">
+                <p class="flex gap-3 rounded-2xl bg-amber-soft px-4 py-3 text-sm text-amber-ink">
+                    <Info size={18} class="mt-px shrink-0" />
+                    <span><strong class="font-semibold">{blockedReason}.</strong> Menu tetap bisa dilihat, tapi pesanan belum bisa dikirim.</span>
+                </p>
             </div>
         {/if}
 
-        <div class="sticky top-0 z-20 border-b border-stone-200 bg-white/95 backdrop-blur">
-            <div class="mx-auto max-w-2xl px-4 pt-3">
-                <input type="search" class="input py-2" placeholder="Cari menu…" bind:value={search} aria-label="Cari menu" />
+        <div class="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur-xl">
+            <div class="mx-auto max-w-2xl px-5 pt-3">
+                <label class="relative block">
+                    <span class="sr-only">Cari menu</span>
+                    <Search size={18} class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-faint" />
+                    <input type="search" class="input rounded-full pl-11" placeholder="Cari ayam, sambal, minuman…" bind:value={search} />
+                </label>
             </div>
-            <nav class="mx-auto flex max-w-2xl gap-2 overflow-x-auto px-4 py-2.5" aria-label="Kategori">
+            <nav class="scroll-x mx-auto max-w-2xl gap-6 px-5" aria-label="Kategori">
                 {#each sections as section (section.id)}
+                    {@const active = activeCategory === section.id}
                     <button
+                        id="tab-{section.id}"
                         type="button"
-                        class="shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition {activeCategory === section.id ? 'bg-brand-600 text-white' : 'bg-stone-100 text-stone-700'}"
+                        aria-current={active ? 'true' : undefined}
+                        class="relative shrink-0 py-3.5 text-sm font-semibold whitespace-nowrap transition {active ? 'text-ink' : 'text-muted hover:text-ink-soft'}"
                         onclick={() => scrollToCategory(section.id)}
                     >
                         {section.name}
+                        <span class="absolute inset-x-0 bottom-0 h-0.5 rounded-full transition {active ? 'bg-brand-600' : 'bg-transparent'}"></span>
                     </button>
                 {/each}
             </nav>
         </div>
 
-        <main class="mx-auto max-w-2xl px-4 pt-4 pb-32">
+        <main class="mx-auto max-w-2xl px-5 pt-2 pb-36">
             {#if sections.length === 0}
-                <EmptyState
-                    title={search ? 'Menu tidak ditemukan' : 'Menu belum tersedia'}
-                    description={search ? `Tidak ada menu yang cocok dengan "${search}".` : 'Silakan cek kembali nanti.'}
-                />
+                <div class="pt-6">
+                    <EmptyState
+                        icon={search ? SearchX : undefined}
+                        title={search ? 'Menu tidak ditemukan' : 'Menu belum tersedia'}
+                        description={search ? `Tidak ada menu yang cocok dengan "${search}".` : 'Silakan cek kembali nanti.'}
+                    />
+                </div>
             {/if}
 
             {#each sections as section (section.id)}
-                <section id="kategori-{section.id}" data-category={section.id} class="scroll-mt-32 pb-4">
-                    <h2 class="mb-2 text-lg font-bold">{section.name}</h2>
-                    <div class="grid gap-3 sm:grid-cols-2">
+                <section id="kategori-{section.id}" data-category={section.id} class="scroll-mt-36 pt-6" aria-labelledby="judul-{section.id}">
+                    <div class="flex items-baseline justify-between gap-3">
+                        <h2 id="judul-{section.id}" class="display text-2xl text-ink">{section.name}</h2>
+                        <span class="num text-xs text-faint">{section.products.length} menu</span>
+                    </div>
+                    <div class="divide-y divide-line">
                         {#each section.products as product (product.id)}
                             <ProductCard {product} />
                         {/each}
@@ -120,7 +143,7 @@
             {/each}
 
             {#if storeSettings.min_order > 0}
-                <p class="mt-2 text-center text-xs text-stone-500">Minimal order {rupiah(storeSettings.min_order)}</p>
+                <p class="mt-6 text-center text-xs text-muted">Minimal order {rupiah(storeSettings.min_order)}</p>
             {/if}
         </main>
 
@@ -128,14 +151,18 @@
             <div class="fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
                 <button
                     type="button"
-                    class="mx-auto flex w-full max-w-2xl items-center justify-between rounded-2xl bg-brand-600 px-5 py-3.5 text-white shadow-lg active:bg-brand-700"
+                    class="mx-auto flex w-full max-w-2xl animate-sheet-up items-center gap-3 rounded-full bg-ink py-2 pr-5 pl-2 text-paper shadow-float transition active:scale-[0.99]"
                     onclick={() => goTo('cart')}
                 >
-                    <span class="flex items-center gap-2 font-semibold">
-                        <span class="rounded-full bg-white/25 px-2 py-0.5 text-sm tabular-nums">{itemCount}</span>
-                        item · Lihat keranjang
+                    <span class="relative flex size-11 items-center justify-center rounded-full bg-white/10">
+                        <ShoppingBag size={20} />
+                        {#key itemCount}
+                            <span class="num absolute -top-0.5 -right-0.5 min-w-5 animate-pop rounded-full bg-brand-500 px-1 text-center text-[11px] leading-5 font-bold text-white">{itemCount}</span>
+                        {/key}
                     </span>
-                    <span class="font-bold tabular-nums">{rupiah(subtotal)}</span>
+                    <span class="flex-1 text-left text-[15px] font-semibold">Lihat keranjang</span>
+                    <span class="num text-[15px] font-semibold">{rupiah(subtotal)}</span>
+                    <ArrowRight size={18} class="opacity-60" />
                 </button>
             </div>
         {/if}

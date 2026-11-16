@@ -12,7 +12,7 @@
 </script>
 
 <div class="relative">
-    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-stone-500">Rp</span>
+    <span class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-sm font-medium text-faint">Rp</span>
     <!-- svelte-ignore a11y_autofocus -->
-    <input {id} type="text" inputmode="numeric" class="input pl-9 tabular-nums {className}" {placeholder} value={display} oninput={onInput} {autofocus} {...rest} />
+    <input {id} type="text" inputmode="numeric" class="input num pl-10 font-medium {className}" {placeholder} value={display} oninput={onInput} {autofocus} {...rest} />
 </div>

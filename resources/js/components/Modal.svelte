@@ -1,8 +1,10 @@
 <script>
-    /** Dialog sederhana. Tutup dengan tombol ×, klik latar, atau Escape. */
+    import X from '@lucide/svelte/icons/x';
+
+    /** Dialog: bottom sheet di mobile, modal di tengah pada layar besar. Tutup via ×, latar, atau Escape. */
     let { open = $bindable(false), title = '', size = 'md', onclose, children, footer } = $props();
 
-    const widths = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' };
+    const widths = { sm: 'sm:max-w-sm', md: 'sm:max-w-lg', lg: 'sm:max-w-2xl', xl: 'sm:max-w-4xl' };
 
     function close() {
         open = false;
@@ -17,17 +19,27 @@
 <svelte:window onkeydown={onKeydown} />
 
 {#if open}
-    <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" role="presentation" onclick={(e) => e.target === e.currentTarget && close()}>
-        <div class="flex max-h-[92vh] w-full {widths[size]} flex-col rounded-t-2xl bg-white shadow-xl sm:rounded-2xl" role="dialog" aria-modal="true" aria-label={title}>
-            <div class="flex items-center justify-between border-b border-stone-100 px-5 py-3">
-                <h2 class="text-base font-semibold">{title}</h2>
-                <button type="button" class="btn-ghost btn-sm text-lg" onclick={close} aria-label="Tutup">×</button>
+    <div
+        class="fixed inset-0 z-50 flex animate-fade-in items-end justify-center bg-ink/40 backdrop-blur-[2px] sm:items-center sm:p-6"
+        role="presentation"
+        onclick={(e) => e.target === e.currentTarget && close()}
+    >
+        <div
+            class="flex max-h-[92dvh] w-full {widths[size]} animate-sheet-up flex-col rounded-t-[1.75rem] bg-surface shadow-float sm:rounded-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+        >
+            <div class="flex justify-center pt-2.5 sm:hidden" aria-hidden="true"><span class="h-1 w-10 rounded-full bg-line-strong"></span></div>
+            <div class="flex items-center justify-between gap-3 px-5 pt-3 pb-2 sm:pt-5">
+                <h2 class="display text-xl text-ink">{title}</h2>
+                <button type="button" class="btn-icon -mr-2 size-10" onclick={close} aria-label="Tutup"><X size={20} /></button>
             </div>
-            <div class="overflow-y-auto px-5 py-4">
+            <div class="overflow-y-auto px-5 pt-2 pb-5">
                 {@render children?.()}
             </div>
             {#if footer}
-                <div class="flex flex-wrap justify-end gap-2 border-t border-stone-100 px-5 py-3">
+                <div class="safe-bottom flex flex-wrap justify-end gap-2 border-t border-line px-5 pt-3 sm:pb-4 [&>*]:flex-1 sm:[&>*]:flex-none">
                     {@render footer()}
                 </div>
             {/if}

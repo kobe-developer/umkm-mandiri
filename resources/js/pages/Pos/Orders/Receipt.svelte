@@ -1,5 +1,7 @@
 <script>
     import { Link } from '@inertiajs/svelte';
+    import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+    import Printer from '@lucide/svelte/icons/printer';
     import { rupiah, dateTime } from '../../../lib/format.js';
 
     /** Struk 80mm — tampil di layar & dicetak dari browser. */
@@ -8,13 +10,13 @@
 
 <svelte:head><title>Struk {order.order_number}</title></svelte:head>
 
-<div class="min-h-screen bg-stone-100 py-6 print:bg-white print:py-0">
-    <div class="no-print mx-auto mb-4 flex max-w-[80mm] gap-2 px-2">
-        <Link href={`/pos/orders/${order.order_number}`} class="btn-secondary flex-1">← Kembali</Link>
-        <button type="button" class="btn-primary flex-1" onclick={() => window.print()}>🖨️ Cetak</button>
+<div class="min-h-dvh bg-paper-deep py-6 print:bg-white print:py-0">
+    <div class="no-print mx-auto mb-5 flex max-w-[80mm] gap-2 px-2">
+        <Link href={`/pos/orders/${order.order_number}`} class="btn-secondary flex-1"><ChevronLeft size={17} />Kembali</Link>
+        <button type="button" class="btn-primary flex-1" onclick={() => window.print()}><Printer size={16} />Cetak</button>
     </div>
 
-    <article class="receipt mx-auto w-[80mm] bg-white px-4 py-5 font-mono text-[12px] leading-snug text-black shadow print:shadow-none">
+    <article class="receipt mx-auto w-[80mm] bg-white px-4 py-5 font-mono text-[12px] leading-snug text-black shadow-float print:shadow-none">
         <header class="text-center">
             <p class="text-sm font-bold uppercase">{store.store_name}</p>
             {#if store.address}<p>{store.address}</p>{/if}

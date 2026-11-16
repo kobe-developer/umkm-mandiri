@@ -1,6 +1,8 @@
 <script>
     import { useForm } from '@inertiajs/svelte';
     import { untrack } from 'svelte';
+    import QrCode from '@lucide/svelte/icons/qr-code';
+    import ImageUp from '@lucide/svelte/icons/image-up';
     import Toggle from '../Toggle.svelte';
 
     /** Form metode pembayaran (dipakai di dalam Modal). */
@@ -86,18 +88,31 @@
     {#if form.type === 'qris'}
         <div>
             <p class="label">Gambar QR statis</p>
-            {#if preview}<img src={preview} alt="QRIS" class="mb-2 size-40 rounded-xl border border-stone-200 object-contain" />{/if}
-            <input type="file" accept="image/jpeg,image/png,image/webp" class="block w-full text-sm" onchange={onImage} aria-label="Pilih gambar QRIS" />
-            <p class="mt-1 text-xs text-stone-500">Ditampilkan ke pelanggan saat memilih QRIS.</p>
+            <div class="flex items-center gap-4">
+                <div class="flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-paper text-faint">
+                    {#if preview}
+                        <img src={preview} alt="QRIS" class="size-full object-contain" />
+                    {:else}
+                        <QrCode size={32} strokeWidth={1.5} aria-hidden="true" />
+                    {/if}
+                </div>
+                <div class="min-w-0">
+                    <label class="btn-secondary btn-sm cursor-pointer">
+                        <ImageUp size={15} /><span>{preview ? 'Ganti gambar' : 'Pilih gambar'}</span>
+                        <input type="file" accept="image/jpeg,image/png,image/webp" class="sr-only" onchange={onImage} aria-label="Pilih gambar QRIS" />
+                    </label>
+                    <p class="hint">Ditampilkan ke pelanggan saat memilih QRIS.</p>
+                </div>
+            </div>
             {#if form.errors.qris_image}<p class="error">{form.errors.qris_image}</p>{/if}
         </div>
     {/if}
 
     <fieldset>
         <legend class="label">Berlaku untuk kanal</legend>
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-2">
             {#each channels as channel (channel.value)}
-                <label class="flex items-center gap-2 rounded-xl border border-stone-200 px-3 py-2 text-sm">
+                <label class="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-xl border px-3.5 text-sm transition {form.channels.includes(channel.value) ? 'border-ink/40 bg-paper text-ink' : 'border-line text-ink-soft hover:border-line-strong'}">
                     <input type="checkbox" class="checkbox" checked={form.channels.includes(channel.value)} onchange={(e) => toggleChannel(channel.value, e.currentTarget.checked)} />
                     {channel.label}
                 </label>
@@ -106,11 +121,13 @@
         {#if form.errors.channels}<p class="error">{form.errors.channels}</p>{/if}
     </fieldset>
 
-    <div class="grid items-center gap-4 sm:grid-cols-2">
+    <div class="grid items-end gap-4 sm:grid-cols-2">
         <div>
             <label class="label" for="pm-sort">Urutan</label>
             <input id="pm-sort" type="number" min="0" class="input" bind:value={form.sort_order} />
         </div>
-        <Toggle bind:checked={form.is_active} label="Aktif" />
+        <div class="flex min-h-12 flex-col justify-center rounded-xl bg-paper px-4">
+            <Toggle bind:checked={form.is_active} label="Aktif" />
+        </div>
     </div>
 </form>

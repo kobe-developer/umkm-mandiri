@@ -1,28 +1,29 @@
 <script>
-    /** Badge status order / pembayaran. */
+    /** Badge status order / pembayaran: titik warna + label, nada lembut. */
     let { status, label = null, kind = 'order' } = $props();
 
-    const ORDER = {
-        baru: 'bg-amber-100 text-amber-800 ring-amber-200',
-        dikonfirmasi: 'bg-sky-100 text-sky-800 ring-sky-200',
-        diproses: 'bg-indigo-100 text-indigo-800 ring-indigo-200',
-        siap: 'bg-violet-100 text-violet-800 ring-violet-200',
-        selesai: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
-        dibatalkan: 'bg-stone-200 text-stone-600 ring-stone-300',
+    const TONES = {
+        attention: 'bg-amber-soft text-amber-ink [--dot:#c98a1b]',
+        progress: 'bg-paper-deep text-ink-soft [--dot:#3d372e]',
+        positive: 'bg-leaf-50 text-leaf-700 [--dot:#4d7a46]',
+        negative: 'bg-brand-50 text-brand-700 [--dot:#b93a1a]',
+        neutral: 'bg-paper-deep text-muted [--dot:#a69d90]',
     };
-    const PAYMENT = {
-        belum_bayar: 'bg-orange-100 text-orange-800 ring-orange-200',
-        lunas: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
-        void: 'bg-red-100 text-red-700 ring-red-200',
-    };
+    const ORDER = { baru: 'attention', dikonfirmasi: 'progress', diproses: 'progress', siap: 'progress', selesai: 'positive', dibatalkan: 'neutral' };
+    const PAYMENT = { belum_bayar: 'attention', lunas: 'positive', void: 'negative' };
     const LABELS = {
         baru: 'Baru', dikonfirmasi: 'Dikonfirmasi', diproses: 'Diproses', siap: 'Siap/Diantar',
         selesai: 'Selesai', dibatalkan: 'Dibatalkan', belum_bayar: 'Belum Bayar', lunas: 'Lunas', void: 'Void',
     };
 
-    const classes = $derived((kind === 'payment' ? PAYMENT : ORDER)[status] ?? 'bg-stone-100 text-stone-700 ring-stone-200');
+    const tone = $derived(TONES[(kind === 'payment' ? PAYMENT : ORDER)[status] ?? 'neutral']);
+    const isLive = $derived(kind === 'order' && status === 'baru');
 </script>
 
-<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset whitespace-nowrap {classes}">
+<span class="inline-flex items-center gap-1.5 rounded-full py-0.5 pr-2.5 pl-2 text-xs font-semibold whitespace-nowrap {tone}">
+    <span class="relative flex size-1.5">
+        {#if isLive}<span class="absolute inline-flex size-full animate-ping rounded-full bg-(--dot) opacity-60"></span>{/if}
+        <span class="relative inline-flex size-1.5 rounded-full bg-(--dot)"></span>
+    </span>
     {label ?? LABELS[status] ?? status}
 </span>
