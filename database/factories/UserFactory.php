@@ -17,7 +17,7 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'username' => fake()->unique()->userName().Str::random(3),
+            'username' => str_replace('.', '_', fake()->unique()->userName()).Str::random(3), // alpha_dash: tanpa titik
             'email' => null,
             'password' => static::$password ??= Hash::make('password'),
             'role' => Role::Cashier,
