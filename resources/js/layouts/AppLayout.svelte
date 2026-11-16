@@ -82,17 +82,18 @@
     let previousPending = null;
     $effect(() => {
         const count = pendingOnline;
-        if (previousPending !== null && count > previousPending) {
-            playNotification();
-            if (page.component === 'Pos/Online') router.reload({ preserveScroll: true });
-        }
+        if (previousPending !== null && count > previousPending) playNotification();
         previousPending = count;
     });
 
+    // Halaman berisi daftar order dimuat ulang penuh dalam SATU request (badge + daftar sekaligus),
+    // halaman lain cukup memperbarui badge.
+    const ORDER_LIST_PAGES = ['Pos/Online'];
+
     function refreshPos() {
-        if (document.visibilityState === 'visible') {
-            router.reload({ only: ['pos'], preserveScroll: true, preserveState: true, showProgress: false });
-        }
+        if (document.visibilityState !== 'visible') return;
+        const only = ORDER_LIST_PAGES.includes(page.component) ? [] : ['pos'];
+        router.reload({ only, preserveScroll: true, preserveState: true, showProgress: false });
     }
 
     onMount(() => {
@@ -106,10 +107,7 @@
                 echo = getEcho();
                 echo?.private('orders')
                     .listen('.order.created', refreshPos)
-                    .listen('.order.updated', () => {
-                        refreshPos();
-                        if (page.component === 'Pos/Online') router.reload({ preserveScroll: true, showProgress: false });
-                    });
+                    .listen('.order.updated', refreshPos);
             });
         }
 

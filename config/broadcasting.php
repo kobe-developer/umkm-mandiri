@@ -42,7 +42,10 @@ return [
                 'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
             ],
             'client_options' => [
-                // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+                // Broadcast dikirim langsung saat request (ShouldBroadcastNow): batasi waktu tunggu
+                // agar checkout/aksi kasir tidak menggantung bila Reverb tidak bisa dihubungi.
+                'connect_timeout' => 1,
+                'timeout' => 2,
             ],
         ],
 

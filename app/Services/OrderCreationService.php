@@ -124,7 +124,9 @@ class OrderCreationService
             return $order;
         });
 
-        OrderCreated::dispatch($order);
+        // Broadcast langsung (bukan antrean) agar kasir menerima order seketika;
+        // bila Reverb mati, order tetap tersimpan dan kasir memakai polling cadangan.
+        rescue(fn () => OrderCreated::dispatch($order));
 
         return $order;
     }

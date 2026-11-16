@@ -170,7 +170,7 @@ class OrderLifecycleService
             return $locked;
         });
 
-        OrderUpdated::dispatch($fresh);
+        rescue(fn () => OrderUpdated::dispatch($fresh));
 
         return $fresh->fresh(['items', 'paymentMethod']);
     }
