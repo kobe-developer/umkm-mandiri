@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+
+@source '../js/**/*.svelte';
+@source '../views/**/*.blade.php';
+
+@theme {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --color-brand-50: #fef2f2;
+    --color-brand-100: #fee2e2;
+    --color-brand-500: #ef4444;
+    --color-brand-600: #dc2626;
+    --color-brand-700: #b91c1c;
+}
+
+@utility btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition select-none disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+    @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-700;
+}
+@utility btn-secondary {
+    @apply btn border border-stone-300 bg-white text-stone-800 hover:bg-stone-100;
+}
+@utility btn-success {
+    @apply btn bg-emerald-600 text-white hover:bg-emerald-700;
+}
+@utility btn-danger {
+    @apply btn border border-red-300 bg-white text-red-700 hover:bg-red-50;
+}
+@utility btn-ghost {
+    @apply btn text-stone-700 hover:bg-stone-100;
+}
+@utility btn-sm {
+    @apply rounded-lg px-3 py-1.5 text-xs;
+}
+
+@layer components {
+    .input {
+        @apply block w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 focus:outline-none disabled:bg-stone-100;
+    }
+    .label { @apply mb-1 block text-sm font-medium text-stone-700; }
+    .error { @apply mt-1 text-xs text-red-600; }
+    .card { @apply rounded-2xl border border-stone-200 bg-white shadow-sm; }
+    .checkbox { @apply size-4 rounded border-stone-300 text-brand-600 accent-brand-600; }
+
+    .table { @apply w-full text-left text-sm; }
+    .table th { @apply bg-stone-50 px-3 py-2 text-xs font-semibold tracking-wide text-stone-500 uppercase; }
+    .table td { @apply border-t border-stone-100 px-3 py-2 align-top; }
+}
+
+@media print {
+    .no-print { display: none !important; }
+    body { background: white; }
+}
