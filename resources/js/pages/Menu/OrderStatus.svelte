@@ -1,6 +1,6 @@
 <script>
     import { onMount } from 'svelte';
-    import { router } from '@inertiajs/svelte';
+    import { page, router } from '@inertiajs/svelte';
     import StatusTimeline from '../../components/menu/StatusTimeline.svelte';
     import PaymentInfo from '../../components/menu/PaymentInfo.svelte';
     import StatusBadge from '../../components/StatusBadge.svelte';
@@ -10,13 +10,16 @@
     import Copy from '@lucide/svelte/icons/copy';
     import { rupiah, dateTime } from '../../lib/format.js';
     import { cart } from '../../lib/cart.svelte.js';
+    import { isFinalStatus } from '../../lib/orderStatus.js';
+    import { keepOrdersFresh } from '../../lib/realtime.js';
 
-    let { order, isNew = false, storeWhatsapp = null, paymentMethod = null } = $props();
+    let { order, isNew = false, storeWhatsapp = null, paymentMethod = null, realtimeChannel = null } = $props();
 
-    const REFRESH_MS = 15000;
-    const FINAL_STATUSES = ['selesai', 'dibatalkan'];
+    /** Polling cadangan bila WebSocket tidak tersedia. */
+    const FALLBACK_REFRESH_MS = 15000;
 
-    const isFinal = $derived(FINAL_STATUSES.includes(order.status));
+    const isFinal = $derived(isFinalStatus(order.status));
+    const realtime = $derived(Boolean(page.props.config?.realtime && realtimeChannel));
     const storeChatUrl = $derived(
         storeWhatsapp ? `https://wa.me/${storeWhatsapp}?text=${encodeURIComponent(`Halo, saya mau tanya pesanan ${order.order_number} atas nama ${order.customer_name}.`)}` : null,
     );
@@ -38,15 +41,15 @@
         if (isNew) cart.clear();
     });
 
-    // Perbarui status otomatis selama pesanan belum final
+    // Status ikut berubah seketika saat kasir memprosesnya, selama pesanan belum final
     $effect(() => {
         if (isFinal) return;
-        const timer = setInterval(() => {
-            if (document.visibilityState === 'visible') {
-                router.reload({ only: ['order'], preserveScroll: true, showProgress: false });
-            }
-        }, REFRESH_MS);
-        return () => clearInterval(timer);
+        return keepOrdersFresh({
+            channels: [realtimeChannel],
+            realtime,
+            intervalMs: FALLBACK_REFRESH_MS,
+            reload: () => router.reload({ only: ['order'], preserveScroll: true, showProgress: false }),
+        });
     });
 </script>
 

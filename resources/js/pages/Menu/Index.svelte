@@ -4,6 +4,7 @@
     import ProductCard from '../../components/menu/ProductCard.svelte';
     import CartView from '../../components/menu/CartView.svelte';
     import CheckoutForm from '../../components/menu/CheckoutForm.svelte';
+    import OrderTracker from '../../components/menu/OrderTracker.svelte';
     import Search from '@lucide/svelte/icons/search';
     import SearchX from '@lucide/svelte/icons/search-x';
     import ShoppingBag from '@lucide/svelte/icons/shopping-bag';
@@ -13,7 +14,7 @@
     import { rupiah } from '../../lib/format.js';
     import { cart } from '../../lib/cart.svelte.js';
 
-    let { categories, products, paymentMethods, storeSettings } = $props();
+    let { categories, products, paymentMethods, storeSettings, trackedOrders = [], hasOrderHistory = false } = $props();
 
     /** Langkah: menu → keranjang → checkout */
     let step = $state('menu');
@@ -107,7 +108,7 @@
     {:else if step === 'checkout'}
         <CheckoutForm {productMap} settings={storeSettings} {paymentMethods} {blockedReason} onback={() => goTo('cart')} />
     {:else}
-        <MenuHeader settings={storeSettings} />
+        <MenuHeader settings={storeSettings} {hasOrderHistory} />
 
         {#if blockedReason}
             <div class="mx-auto max-w-2xl px-5 pb-4" role="status">
@@ -117,6 +118,8 @@
                 </p>
             </div>
         {/if}
+
+        <OrderTracker orders={trackedOrders} />
 
         <div bind:this={stickyBar} class="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur-xl">
             <div class="mx-auto max-w-2xl px-5 pt-3">

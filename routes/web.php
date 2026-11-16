@@ -17,6 +17,7 @@ Route::redirect('/', '/menu');
 Route::prefix('menu')->name('menu.')->group(function () {
     Route::get('/', [Menu\MenuController::class, 'index'])->name('index');
     Route::post('/checkout', [Menu\CheckoutController::class, 'store'])->middleware('throttle:checkout')->name('checkout');
+    Route::get('/pesanan', [Menu\OrderHistoryController::class, 'index'])->middleware('throttle:60,1')->name('orders');
     Route::get('/order/{order}', [Menu\OrderStatusController::class, 'show'])->middleware('throttle:60,1')->name('order.show');
 });
 

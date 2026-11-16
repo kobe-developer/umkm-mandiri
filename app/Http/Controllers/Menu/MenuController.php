@@ -8,12 +8,13 @@ use App\Models\Category;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\StoreSetting;
+use App\Services\OrderTracker;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class MenuController extends Controller
 {
-    public function index(): Response
+    public function index(OrderTracker $tracker): Response
     {
         $settings = StoreSetting::current();
 
@@ -43,6 +44,8 @@ class MenuController extends Controller
                     'account_holder' => $m->account_holder,
                     'qris_image_url' => $m->qris_image_url,
                 ]),
+            'trackedOrders' => fn () => $tracker->active(),
+            'hasOrderHistory' => fn () => $tracker->hasHistory(),
             'storeSettings' => [
                 'name' => $settings->store_name,
                 'address' => $settings->address,

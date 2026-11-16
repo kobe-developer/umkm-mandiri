@@ -153,6 +153,8 @@ class OrderLifecycleService
     {
         $timestamps = match ($status) {
             OrderStatus::Confirmed => ['confirmed_at' => now(), 'cashier_id' => $order->cashier_id ?? $user->id],
+            OrderStatus::Processing => ['processing_at' => now()],
+            OrderStatus::Ready => ['ready_at' => now()],
             OrderStatus::Completed => ['completed_at' => now()],
             default => [],
         };

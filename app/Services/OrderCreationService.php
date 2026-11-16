@@ -61,6 +61,7 @@ class OrderCreationService
                 'cashier_id' => $cashier->id,
                 'shift_id' => $shift->id,
                 'confirmed_at' => now(),
+                'processing_at' => now(),
             ]);
             $order->items()->createMany($priced['lines']);
 
