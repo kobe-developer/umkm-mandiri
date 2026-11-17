@@ -69,6 +69,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Trusted Proxies
+    |--------------------------------------------------------------------------
+    |
+    | IP/CIDR proxy (dipisah koma, atau "*") yang boleh mengirim header
+    | X-Forwarded-* — mis. ngrok/Cloudflare/load balancer di depan nginx.
+    | Kosong = tidak ada proxy yang dipercaya.
+    |
+    */
+
+    'trusted_proxies' => array_values(array_filter(
+        array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', ''))),
+    )),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

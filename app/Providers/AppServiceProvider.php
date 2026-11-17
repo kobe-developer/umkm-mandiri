@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
@@ -24,7 +25,22 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
+        $this->configureTrustedProxies();
         $this->configureRateLimiting();
+    }
+
+    /**
+     * Dibaca dari config (bukan env() di bootstrap/app.php) karena callback middleware
+     * di sana dijalankan sebelum .env dimuat, sehingga nilainya selalu kosong.
+     */
+    private function configureTrustedProxies(): void
+    {
+        $proxies = config('app.trusted_proxies', []);
+        if ($proxies === []) {
+            return;
+        }
+
+        TrustProxies::at($proxies === ['*'] ? '*' : $proxies);
     }
 
     private function configureRateLimiting(): void

@@ -25,11 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias(['role' => EnsureRole::class]);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn (Request $request) => $request->user()?->isOwner() ? route('admin.dashboard') : route('pos.dashboard'));
-        // Percayai X-Forwarded-* hanya dari proxy yang dikonfigurasi (mis. load balancer/Cloudflare).
-        // Tanpa konfigurasi, IP klien diambil dari REMOTE_ADDR yang diisi nginx.
-        if ($proxies = env('TRUSTED_PROXIES')) {
-            $middleware->trustProxies(at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
-        }
+        // Trusted proxies dikonfigurasi di AppServiceProvider (config app.trusted_proxies).
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

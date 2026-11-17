@@ -49,7 +49,9 @@ Password awal bisa diatur lewat `SEED_OWNER_PASSWORD`, `SEED_CASHIER_PASSWORD`, 
 | `reverb` | WebSocket notifikasi order online baru |
 | `node` (profil `dev`) | Vite dev server, hanya untuk development |
 
-Production: `APP_BUILD_TARGET=prod docker compose build` membuat image berisi kode + `vendor` + aset ter-build (`public/build`). Set `APP_ENV=production`, `APP_DEBUG=false`, HTTPS di depan nginx, dan `VITE_REVERB_*` sesuai domain publik sebelum build aset. Backup ada di `storage/app/backups` — salin ke penyimpanan di luar VPS.
+Production: `APP_BUILD_TARGET=prod docker compose build` membuat image berisi kode + `vendor` + aset ter-build (`public/build`). Set `APP_ENV=production`, `APP_DEBUG=false`, HTTPS di depan nginx, dan `TRUSTED_PROXIES` ke IP proxy sebenarnya. `VITE_REVERB_*` boleh dikosongkan (WebSocket ikut origin halaman lewat proxy `/app`).
+
+Akses via tunnel HTTPS (mis. `ngrok http 8080`): cukup `TRUSTED_PROXIES` berisi jaringan Docker (default `.env.example`) agar Laravel membaca `X-Forwarded-Proto` dan aset/URL memakai `https://`. Backup ada di `storage/app/backups` — salin ke penyimpanan di luar VPS.
 
 ## Testing
 
