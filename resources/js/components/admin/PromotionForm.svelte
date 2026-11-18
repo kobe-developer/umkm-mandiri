@@ -1,6 +1,8 @@
 <script>
     import { useForm } from '@inertiajs/svelte';
     import MoneyInput from '../MoneyInput.svelte';
+    import SearchSelect from '../SearchSelect.svelte';
+    import DatePicker from '../DatePicker.svelte';
     import { rupiah } from '../../lib/format.js';
 
     /** Form promo produk (dipakai di dalam Modal). Tanggal berlaku penuh satu hari (WIB). */
@@ -16,6 +18,12 @@
     }));
 
     const product = $derived(products.find((p) => p.id === Number(form.product_id)));
+    const productOptions = $derived(products.map((p) => ({ value: p.id, label: p.name, hint: rupiah(p.price) })));
+
+    // Tanggal berakhir tidak boleh sebelum tanggal mulai
+    function onFromChange(from) {
+        if (form.active_until && form.active_until < from) form.active_until = from;
+    }
     const saving = $derived(product && form.price > 0 && form.price < product.price ? product.price - form.price : 0);
     const savingPercent = $derived(product && saving > 0 ? Math.round((saving / product.price) * 100) : 0);
 
@@ -38,10 +46,15 @@
 <form id={formId} class="space-y-4" onsubmit={submit}>
     <div>
         <label class="label" for="promo-product">Produk</label>
-        <select id="promo-product" class="input" bind:value={form.product_id} required>
-            <option value={null} disabled>Pilih produk…</option>
-            {#each products as item (item.id)}<option value={item.id}>{item.name} — {rupiah(item.price)}</option>{/each}
-        </select>
+        <SearchSelect
+            id="promo-product"
+            options={productOptions}
+            bind:value={form.product_id}
+            placeholder="Pilih produk…"
+            searchPlaceholder="Cari nama produk…"
+            emptyText="Produk tidak ditemukan"
+            invalid={!!form.errors.product_id}
+        />
         {#if form.errors.product_id}<p class="error">{form.errors.product_id}</p>{/if}
     </div>
 
@@ -60,12 +73,12 @@
     <div class="grid gap-4 sm:grid-cols-2">
         <div>
             <label class="label" for="promo-from">Mulai</label>
-            <input id="promo-from" type="date" class="input num" bind:value={form.active_from} required />
+            <DatePicker id="promo-from" bind:value={form.active_from} {today} onchange={onFromChange} invalid={!!form.errors.active_from} />
             {#if form.errors.active_from}<p class="error">{form.errors.active_from}</p>{/if}
         </div>
         <div>
             <label class="label" for="promo-until">Berakhir</label>
-            <input id="promo-until" type="date" class="input num" min={form.active_from} bind:value={form.active_until} required />
+            <DatePicker id="promo-until" bind:value={form.active_until} min={form.active_from} {today} invalid={!!form.errors.active_until} />
             {#if form.errors.active_until}<p class="error">{form.errors.active_until}</p>{/if}
         </div>
     </div>
