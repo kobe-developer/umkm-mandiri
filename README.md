@@ -2,7 +2,7 @@
 
 Aplikasi web untuk mencatat semua penjualan (dine in, take away, online) di satu tempat, plus menu order online yang menggantikan pemesanan via chat WhatsApp. Implementasi **Fase 1 (MVP)** dari [PRD.md](PRD.md).
 
-**Stack:** Laravel 13 (PHP 8.4) · Inertia.js v3 + Svelte 5 · Tailwind CSS 4 · MySQL 8.4 · Laravel Reverb · Docker Compose
+**Stack:** Laravel 13 (PHP 8.5) · Inertia.js v3 + Svelte 5 · Tailwind CSS 4 · MySQL 8.4 · Laravel Reverb · Docker Compose
 
 ## Menjalankan (development)
 
@@ -42,7 +42,7 @@ Password awal bisa diatur lewat `SEED_OWNER_PASSWORD`, `SEED_CASHIER_PASSWORD`, 
 
 | Servis | Fungsi |
 | --- | --- |
-| `app` | PHP-FPM 8.4 (Laravel) |
+| `app` | PHP-FPM 8.5 (Laravel) |
 | `nginx` | Web server + proxy WebSocket `/app` → Reverb |
 | `mysql` | MySQL 8.4 (di-tuning untuk VPS RAM 2 GB) |
 | `queue` | `queue:work` (broadcast event order, kirim web push) |
