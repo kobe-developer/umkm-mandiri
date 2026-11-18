@@ -23,7 +23,7 @@ class StockController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Stock/Index', [
-            'products' => Product::with('category:id,name')->where('track_stock', true)
+            'products' => fn () => Product::with('category:id,name')->where('track_stock', true)
                 ->orderBy('category_id')->orderBy('name')->get()
                 ->map(fn (Product $p) => [
                     'id' => $p->id,
@@ -34,7 +34,7 @@ class StockController extends Controller
                     'is_low_stock' => $p->is_low_stock,
                     'is_active' => $p->is_active,
                 ]),
-            'untrackedCount' => Product::where('track_stock', false)->count(),
+            'untrackedCount' => fn () => Product::where('track_stock', false)->count(),
         ]);
     }
 
@@ -46,7 +46,7 @@ class StockController extends Controller
         ]);
 
         return Inertia::render('Admin/Stock/Movements', [
-            'movements' => StockMovement::with(['product:id,name', 'user:id,name', 'order:id,order_number'])
+            'movements' => fn () => StockMovement::with(['product:id,name', 'user:id,name', 'order:id,order_number'])
                 ->when($filters['product_id'] ?? null, fn ($q, $v) => $q->where('product_id', $v))
                 ->when($filters['type'] ?? null, fn ($q, $v) => $q->where('type', $v))
                 ->latest('id')
@@ -64,7 +64,7 @@ class StockController extends Controller
                     'user' => $m->user?->name,
                     'order_number' => $m->order?->order_number,
                 ]),
-            'products' => Product::where('track_stock', true)->orderBy('name')->get(['id', 'name'])->map->only(['id', 'name']),
+            'products' => fn () => Product::where('track_stock', true)->orderBy('name')->get(['id', 'name'])->map->only(['id', 'name']),
             'types' => array_map(fn (StockMovementType $t) => ['value' => $t->value, 'label' => $t->label()], StockMovementType::cases()),
             'filters' => $filters,
         ]);

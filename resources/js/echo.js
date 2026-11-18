@@ -1,5 +1,6 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import { page } from '@inertiajs/svelte';
 
 /**
  * Koneksi WebSocket ke Laravel Reverb. Mengembalikan null bila belum dikonfigurasi;
@@ -10,8 +11,11 @@ let instance;
 export function getEcho() {
     if (instance !== undefined) return instance;
 
-    const key = import.meta.env.VITE_REVERB_APP_KEY;
+    // Key dari server (runtime) diutamakan: image produksi dibangun tanpa .env,
+    // sehingga VITE_REVERB_APP_KEY kosong di bundle produksi.
+    const key = page.props.config?.reverbKey || import.meta.env.VITE_REVERB_APP_KEY;
     if (!key) {
+        console.warn('Key Reverb tidak tersedia, memakai polling.');
         instance = null;
         return instance;
     }

@@ -17,7 +17,7 @@ class ShiftReportController extends Controller
 
         return Inertia::render('Admin/Shifts', [
             'period' => $period->toArray(),
-            'shifts' => $reports->shifts($period),
+            'shifts' => fn () => $reports->shifts($period),
         ]);
     }
 }

@@ -31,7 +31,7 @@ class PromotionController extends Controller
         $status = $filters['status'] ?? Promotion::STATUS_ACTIVE;
 
         return Inertia::render('Admin/Promotions', [
-            'promotions' => Promotion::with('product:id,name,price,deleted_at')
+            'promotions' => fn () => Promotion::with('product:id,name,price,deleted_at')
                 ->withStatus($status)
                 ->orderByDesc('active_until')->orderByDesc('id')
                 ->paginate(self::PER_PAGE)
@@ -49,7 +49,7 @@ class PromotionController extends Controller
                     'description' => $p->description,
                     'status' => $p->status(),
                 ]),
-            'products' => Product::orderBy('name')->get(['id', 'name', 'price'])
+            'products' => fn () => Product::orderBy('name')->get(['id', 'name', 'price'])
                 ->map(fn (Product $p) => ['id' => $p->id, 'name' => $p->name, 'price' => $p->price]),
             'channels' => array_map(fn (OrderChannel $c) => ['value' => $c->value, 'label' => $c->label()], OrderChannel::cases()),
             'filters' => ['status' => $status],

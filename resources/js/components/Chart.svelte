@@ -86,11 +86,17 @@
         return value;
     }
 
+    // Reload latar belakang di layout (badge order online) mengganti objek props halaman walau
+    // isinya sama. Gambar ulang chart hanya bila datanya benar-benar berubah, agar chart tidak
+    // berkedip/beranimasi ulang setiap kali data POS diperbarui.
+    let renderedSignature = null;
+
     $effect(() => {
-        const config = buildConfig();
-        if (!canvas) return;
+        const signature = JSON.stringify({ type, labels, datasets, money, horizontal });
+        if (!canvas || signature === renderedSignature) return;
+        renderedSignature = signature;
         chart?.destroy();
-        chart = new Chart(canvas, config);
+        chart = new Chart(canvas, buildConfig());
     });
 
     onDestroy(() => chart?.destroy());

@@ -26,15 +26,15 @@ class PosOrderController extends Controller
             return redirect()->route('pos.shift.show')->with('error', 'Buka shift terlebih dahulu.');
         }
 
-        $methods = PaymentMethod::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
-        $products = Product::active()->orderBy('sort_order')->orderBy('name')->get();
-        $promotions = $catalog->activeFor($products->modelKeys());
-
+        // Props lazy: partial reload layout (prop `pos`) tidak ikut memuat katalog
         return Inertia::render('Pos/Cashier', [
-            'categories' => Category::where('is_active', true)->ordered()->get(['id', 'name']),
+            'categories' => fn () => Category::where('is_active', true)->ordered()->get(['id', 'name']),
             // Harga promo per kanal dipilih di browser hanya untuk tampilan; server menghitung ulang.
-            'products' => $products
-                ->map(fn (Product $p) => [
+            'products' => function () use ($catalog) {
+                $products = Product::active()->orderBy('sort_order')->orderBy('name')->get();
+                $promotions = $catalog->activeFor($products->modelKeys());
+
+                return $products->map(fn (Product $p) => [
                     'id' => $p->id,
                     'category_id' => $p->category_id,
                     'name' => $p->name,
@@ -44,14 +44,16 @@ class PosOrderController extends Controller
                     'is_sold_out' => $p->is_sold_out,
                     'track_stock' => $p->track_stock,
                     'stock' => $p->stock,
+                ]);
+            },
+            'paymentMethods' => fn () => PaymentMethod::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get()
+                ->map(fn (PaymentMethod $m) => [
+                    'id' => $m->id,
+                    'name' => $m->name,
+                    'type' => $m->type->value,
+                    'channels' => $m->channels,
+                    'qris_image_url' => $m->qris_image_url,
                 ]),
-            'paymentMethods' => $methods->map(fn (PaymentMethod $m) => [
-                'id' => $m->id,
-                'name' => $m->name,
-                'type' => $m->type->value,
-                'channels' => $m->channels,
-                'qris_image_url' => $m->qris_image_url,
-            ]),
             'channels' => [
                 ['value' => OrderChannel::DineIn->value, 'label' => OrderChannel::DineIn->label()],
                 ['value' => OrderChannel::TakeAway->value, 'label' => OrderChannel::TakeAway->label()],

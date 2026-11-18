@@ -21,14 +21,14 @@ class ActivityLogController extends Controller
         ]);
 
         return Inertia::render('Admin/ActivityLogs', [
-            'logs' => ActivityLog::with('user:id,name')
+            'logs' => fn () => ActivityLog::with('user:id,name')
                 ->when($filters['user_id'] ?? null, fn ($q, $v) => $q->where('user_id', $v))
                 ->when($filters['subject_type'] ?? null, fn ($q, $v) => $q->where('subject_type', $v))
                 ->latest('id')
                 ->paginate(self::PER_PAGE)
                 ->withQueryString(),
-            'users' => User::orderBy('name')->get(['id', 'name'])->map->only(['id', 'name']),
-            'subjectTypes' => ActivityLog::distinct()->orderBy('subject_type')->pluck('subject_type'),
+            'users' => fn () => User::orderBy('name')->get(['id', 'name'])->map->only(['id', 'name']),
+            'subjectTypes' => fn () => ActivityLog::distinct()->orderBy('subject_type')->pluck('subject_type'),
             'filters' => $filters,
         ]);
     }

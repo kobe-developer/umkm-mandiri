@@ -17,8 +17,8 @@ class ProductAvailabilityController extends Controller
     public function index(): Response
     {
         return Inertia::render('Pos/Products', [
-            'categories' => Category::ordered()->get(['id', 'name']),
-            'products' => Product::active()->with('category:id,name')->orderBy('category_id')->orderBy('name')->get()
+            'categories' => fn () => Category::ordered()->get(['id', 'name']),
+            'products' => fn () => Product::active()->with('category:id,name')->orderBy('category_id')->orderBy('name')->get()
                 ->map(fn (Product $p) => [
                     'id' => $p->id,
                     'name' => $p->name,

@@ -8,6 +8,7 @@ use App\Models\StoreSetting;
 use App\Services\ActivityLogger;
 use App\Services\BrandIconService;
 use App\Services\StoreStatusService;
+use App\Support\Lazy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -17,14 +18,14 @@ class StoreSettingController extends Controller
 {
     public function edit(StoreStatusService $status, BrandIconService $icons): Response
     {
-        $settings = StoreSetting::current();
+        $settings = Lazy::memo(fn () => StoreSetting::current());
 
         return Inertia::render('Admin/Store', [
             'settings' => $settings,
             'days' => StoreSetting::DAYS,
-            'withinHours' => $status->isWithinOperatingHours($settings, now()),
+            'withinHours' => fn () => $status->isWithinOperatingHours($settings(), now()),
             'menuUrl' => route('menu.index'),
-            'brandIcons' => $icons->urls($settings),
+            'brandIcons' => fn () => $icons->urls($settings()),
         ]);
     }
 

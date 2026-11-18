@@ -34,13 +34,13 @@ class TransactionController extends Controller
         [$period, $filters] = $this->filters($request);
 
         return Inertia::render('Admin/Transactions', [
-            'orders' => OrderResource::collection(
+            'orders' => fn () => OrderResource::collection(
                 $this->query($period, $filters)->with(['paymentMethod', 'cashier'])->withCount('items')
                     ->latest()->paginate(self::PER_PAGE)->withQueryString()
             ),
             'period' => $period->toArray(),
             'filters' => $filters,
-            'options' => [
+            'options' => fn () => [
                 'channels' => array_map(fn (OrderChannel $c) => ['value' => $c->value, 'label' => $c->label()], OrderChannel::cases()),
                 'statuses' => OrderStatus::options(),
                 'paymentStatuses' => array_map(fn (PaymentStatus $s) => ['value' => $s->value, 'label' => $s->label()], PaymentStatus::cases()),
