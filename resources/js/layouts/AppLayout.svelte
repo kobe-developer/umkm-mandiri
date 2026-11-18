@@ -29,6 +29,7 @@
     import Logo from '../components/Logo.svelte';
     import { playNotification, unlockAudio } from '../lib/sound.js';
     import { staffPush } from '../lib/staffPush.svelte.js';
+    import { keepFresh } from '../lib/realtime.js';
 
     let { children } = $props();
 
@@ -77,13 +78,33 @@
     }
 
     // --- Flash message → toast ---
-    $effect(() => {
-        const flash = page.props.flash ?? {};
-        const message = flash.success ?? flash.error;
+    // Sengaja TIDAK memakai $effect pada page.props.flash: partial reload (polling POS, WebSocket)
+    // mempertahankan prop `flash` lama sementara page.props diganti, sehingga toast yang sama
+    // muncul lagi tiap polling. Flash hanya dibaca saat halaman dimuat penuh dan setelah
+    // kunjungan Inertia penuh (bukan partial reload) selesai.
+    const TOAST_DURATION_MS = 4000;
+
+    function showFlash(flash) {
+        const message = flash?.success ?? flash?.error;
         if (!message) return;
         toast = { type: flash.success ? 'success' : 'error', message };
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => (toast = null), 4000);
+        toastTimer = setTimeout(() => (toast = null), TOAST_DURATION_MS);
+    }
+
+    function isFullVisit(visit) {
+        return visit.completed && !visit.only?.length && !visit.except?.length;
+    }
+
+    onMount(() => {
+        showFlash(page.props.flash);
+        const stopListening = router.on('finish', (event) => {
+            if (isFullVisit(event.detail.visit)) showFlash(page.props.flash);
+        });
+        return () => {
+            stopListening();
+            clearTimeout(toastTimer);
+        };
     });
 
     // --- Notifikasi order online baru: suara + badge ---
@@ -98,26 +119,24 @@
     // halaman lain cukup memperbarui badge.
     const ORDER_LIST_PAGES = ['Pos/Online'];
 
+    const DEFAULT_POLL_INTERVAL_SECONDS = 10;
+
     function refreshPos() {
-        if (document.visibilityState !== 'visible') return;
         const only = ORDER_LIST_PAGES.includes(page.component) ? [] : ['pos'];
         router.reload({ only, preserveScroll: true, preserveState: true, showProgress: false });
     }
 
     onMount(() => {
-        // Polling cadangan (≤ 10 detik) bila WebSocket tidak tersedia
-        const interval = setInterval(refreshPos, (page.props.config?.pollInterval ?? 10) * 1000);
-
-        // WebSocket (Reverb) dimuat terpisah agar bundle menu publik tetap ringan
-        let echo = null;
-        if (page.props.config?.realtime) {
-            import('../echo.js').then(({ getEcho }) => {
-                echo = getEcho();
-                echo?.private('orders')
-                    .listen('.order.created', refreshPos)
-                    .listen('.order.updated', refreshPos);
-            });
-        }
+        // WebSocket (Reverb) sebagai jalur utama; polling hanya saat WebSocket tidak tersambung
+        const stopRefreshing = keepFresh({
+            realtime: Boolean(page.props.config?.realtime),
+            intervalMs: (page.props.config?.pollInterval ?? DEFAULT_POLL_INTERVAL_SECONDS) * 1000,
+            reload: refreshPos,
+            subscribe: (echo, onEvent) => {
+                echo.private('orders').listen('.order.created', onEvent).listen('.order.updated', onEvent);
+                return () => echo.leave('orders');
+            },
+        });
 
         staffPush.init(vapidKey);
 
@@ -125,8 +144,7 @@
         window.addEventListener('pointerdown', unlock, { once: true });
 
         return () => {
-            clearInterval(interval);
-            echo?.leave('orders');
+            stopRefreshing();
             window.removeEventListener('pointerdown', unlock);
         };
     });

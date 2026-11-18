@@ -92,7 +92,7 @@ resources/js/components/                 Komponen bersama
 - Omzet laporan = order **Selesai + Lunas** saja. Omzet per kategori/produk dihitung dari subtotal item (sebelum diskon order).
 - Transaksi (buat order, terima pembayaran) hanya bisa saat shift kasir terbuka.
 - Data transaksi tidak pernah dihapus permanen; produk dihapus secara soft delete.
-- Notifikasi order baru: WebSocket (Reverb) + polling cadangan tiap 10 detik, plus **web push** ke perangkat owner/kasir yang mengaktifkannya (banner di POS atau menu **Akun saya**).
+- Notifikasi order baru: WebSocket (Reverb); polling tiap 10 detik hanya berjalan selama WebSocket tidak tersambung (lalu data dimuat ulang sekali saat tersambung kembali), plus **web push** ke perangkat owner/kasir yang mengaktifkannya (banner di POS atau menu **Akun saya**).
 - **Promo** (`/admin/promo`, owner): harga promo per produk, berlaku dari 00:00 tanggal mulai sampai 23:59 tanggal berakhir (WIB), untuk kanal yang dipilih. Harga promo wajib lebih kecil dari harga normal; satu produk tidak boleh punya dua promo dengan periode beririsan (apa pun kanalnya). Harga promo dihitung ulang di server; `order_items` menyimpan `original_price` (harga normal) dan `promotion_id`. Di `/menu` ada tab **Promo** (harga normal dicoret), produk promo tetap tampil di kategorinya.
 - **Web push pelanggan**: centang "Kabari saya lewat notifikasi" saat checkout → notifikasi saat Dikonfirmasi, Diproses, Siap/Diantar, Selesai, Dibatalkan, dan pembayaran Lunas. Langganan terikat ke order (tanpa login), maks. 3 perangkat per order, dihapus otomatis 2 hari setelah order final.
 
