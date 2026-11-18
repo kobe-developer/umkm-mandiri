@@ -21,7 +21,7 @@ class UserController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Users', [
-            'users' => User::orderBy('role')->orderBy('name')->get()
+            'users' => fn () => User::orderBy('role')->orderBy('name')->get()
                 ->map(fn (User $u) => [
                     ...$u->only(['id', 'name', 'username', 'email', 'is_active', 'last_login_at']),
                     'role' => $u->role->value,

@@ -31,12 +31,12 @@ class ProductController extends Controller
         ]);
 
         return Inertia::render('Admin/Products/Index', [
-            'products' => Product::with('category:id,name')
+            'products' => fn () => Product::with('category:id,name')
                 ->when($filters['category_id'] ?? null, fn ($q, $v) => $q->where('category_id', $v))
                 ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('name', 'like', "%{$v}%"))
                 ->orderBy('category_id')->orderBy('sort_order')->orderBy('name')
                 ->get(),
-            'categories' => Category::ordered()->get(['id', 'name']),
+            'categories' => fn () => Category::ordered()->get(['id', 'name']),
             'filters' => $filters,
         ]);
     }
@@ -45,7 +45,7 @@ class ProductController extends Controller
     {
         return Inertia::render('Admin/Products/Form', [
             'product' => null,
-            'categories' => Category::ordered()->get(['id', 'name', 'is_active']),
+            'categories' => fn () => Category::ordered()->get(['id', 'name', 'is_active']),
         ]);
     }
 
@@ -76,7 +76,7 @@ class ProductController extends Controller
     {
         return Inertia::render('Admin/Products/Form', [
             'product' => $product,
-            'categories' => Category::ordered()->get(['id', 'name', 'is_active']),
+            'categories' => fn () => Category::ordered()->get(['id', 'name', 'is_active']),
         ]);
     }
 

@@ -23,8 +23,8 @@ class ShiftController extends Controller
         $open = $user->openShift;
 
         return Inertia::render('Pos/Shift', [
-            'shift' => $open ? [...$open->only(['id', 'opened_at', 'opening_cash']), ...$shifts->summary($open)] : null,
-            'recent' => Shift::where('user_id', $user->id)->whereNotNull('closed_at')
+            'shift' => fn () => $open ? [...$open->only(['id', 'opened_at', 'opening_cash']), ...$shifts->summary($open)] : null,
+            'recent' => fn () => Shift::where('user_id', $user->id)->whereNotNull('closed_at')
                 ->latest('opened_at')->limit(self::RECENT_SHIFTS)->get(),
         ]);
     }

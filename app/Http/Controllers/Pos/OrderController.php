@@ -11,6 +11,7 @@ use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\StoreSetting;
 use App\Services\PromotionCatalog;
+use App\Support\Lazy;
 use App\Support\WhatsAppLink;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -31,6 +32,7 @@ class OrderController extends Controller
         $scope = $filters['scope'] ?? 'shift';
         $shift = $request->user()->openShift;
 
+        // Query baru dijalankan bila prop `orders` dimuat (bukan saat partial reload `pos`)
         $orders = Order::query()
             ->with('paymentMethod')
             ->withCount('items')
@@ -44,29 +46,26 @@ class OrderController extends Controller
                 ->where('order_number', 'like', "%{$s}%")
                 ->orWhere('customer_name', 'like', "%{$s}%")
                 ->orWhere('table_number', $s)))
-            ->latest()
-            ->paginate(self::PER_PAGE)
-            ->withQueryString();
+            ->latest();
 
         return Inertia::render('Pos/Orders/Index', [
-            'orders' => OrderResource::collection($orders),
+            'orders' => fn () => OrderResource::collection($orders->paginate(self::PER_PAGE)->withQueryString()),
             'filters' => ['scope' => $scope, 'search' => $filters['search'] ?? ''],
         ]);
     }
 
     public function show(Request $request, Order $order, PromotionCatalog $catalog): Response
     {
-        $order->load(['items', 'paymentMethod', 'plannedPaymentMethod', 'cashier']);
-        $settings = StoreSetting::current();
+        $loaded = Lazy::memo(fn () => $order->load(['items', 'paymentMethod', 'plannedPaymentMethod', 'cashier']));
         $statusUrl = $order->public_token ? route('menu.order.show', ['order' => $order->order_number, 't' => $order->public_token]) : null;
 
         return Inertia::render('Pos/Orders/Show', [
-            'order' => (new OrderResource($order))->resolve($request),
+            'order' => fn () => (new OrderResource($loaded()))->resolve($request),
             'statusUrl' => $statusUrl,
-            'whatsappLink' => WhatsAppLink::forOrderConfirmation($order, $settings->store_name, $statusUrl),
-            'paymentMethods' => PaymentMethod::forChannel($order->channel)->get()
+            'whatsappLink' => fn () => WhatsAppLink::forOrderConfirmation($loaded(), StoreSetting::current()->store_name, $statusUrl),
+            'paymentMethods' => fn () => PaymentMethod::forChannel($order->channel)->get()
                 ->map(fn (PaymentMethod $m) => ['id' => $m->id, 'name' => $m->name, 'type' => $m->type->value, 'qris_image_url' => $m->qris_image_url]),
-            'products' => $order->isOnline() && $order->status === OrderStatus::New
+            'products' => fn () => $order->isOnline() && $order->status === OrderStatus::New
                 ? $this->editableOnlineProducts($catalog)
                 : [],
             'isOnline' => $order->channel === OrderChannel::Online,

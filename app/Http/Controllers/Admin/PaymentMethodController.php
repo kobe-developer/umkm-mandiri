@@ -25,7 +25,7 @@ class PaymentMethodController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/PaymentMethods', [
-            'methods' => PaymentMethod::orderBy('sort_order')->orderBy('name')->get(),
+            'methods' => fn () => PaymentMethod::orderBy('sort_order')->orderBy('name')->get(),
             'types' => PaymentMethodType::options(),
             'channels' => array_map(fn (OrderChannel $c) => ['value' => $c->value, 'label' => $c->label()], OrderChannel::cases()),
         ]);

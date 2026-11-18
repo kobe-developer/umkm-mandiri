@@ -20,17 +20,17 @@ class DashboardController extends Controller
         return Inertia::render('Admin/Dashboard', [
             'period' => $period->toArray(),
             'presets' => ReportPeriod::PRESETS,
-            'comparison' => $reports->comparison($period),
-            'daily' => $reports->daily($period),
-            'channels' => $reports->byChannel($period),
-            'paymentMethods' => $reports->byPaymentMethod($period),
-            'categories' => $reports->byCategory($period),
-            'topByQuantity' => $reports->topProducts($period, 'quantity'),
-            'topByRevenue' => $reports->topProducts($period, 'revenue'),
-            'hourly' => $reports->hourly($period),
-            'cashiers' => $reports->byCashier($period),
-            'statusCounts' => $reports->statusCounts($period),
-            'lowStock' => Product::lowStock()->orderBy('stock')->get()
+            'comparison' => fn () => $reports->comparison($period),
+            'daily' => fn () => $reports->daily($period),
+            'channels' => fn () => $reports->byChannel($period),
+            'paymentMethods' => fn () => $reports->byPaymentMethod($period),
+            'categories' => fn () => $reports->byCategory($period),
+            'topByQuantity' => fn () => $reports->topProducts($period, 'quantity'),
+            'topByRevenue' => fn () => $reports->topProducts($period, 'revenue'),
+            'hourly' => fn () => $reports->hourly($period),
+            'cashiers' => fn () => $reports->byCashier($period),
+            'statusCounts' => fn () => $reports->statusCounts($period),
+            'lowStock' => fn () => Product::lowStock()->orderBy('stock')->get()
                 ->map(fn (Product $p) => $p->only(['id', 'name', 'stock', 'stock_minimum'])),
         ]);
     }

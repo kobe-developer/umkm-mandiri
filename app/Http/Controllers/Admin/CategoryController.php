@@ -19,7 +19,7 @@ class CategoryController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Categories', [
-            'categories' => Category::ordered()->withCount('products')->get(),
+            'categories' => fn () => Category::ordered()->withCount('products')->get(),
         ]);
     }
 

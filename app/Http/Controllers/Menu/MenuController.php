@@ -10,6 +10,8 @@ use App\Models\Product;
 use App\Models\StoreSetting;
 use App\Services\OrderTracker;
 use App\Services\PromotionCatalog;
+use App\Support\Lazy;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,13 +19,41 @@ class MenuController extends Controller
 {
     public function index(OrderTracker $tracker, PromotionCatalog $catalog): Response
     {
-        $settings = StoreSetting::current();
+        // Katalog dihitung sekali dan hanya bila diminta: reload `trackedOrders` tidak memuat ulang menu
+        $products = Lazy::memo(fn () => $this->onlineProducts($catalog));
 
+        return Inertia::render('Menu/Index', [
+            'categories' => fn () => Category::where('is_active', true)->ordered()
+                ->whereIn('id', $products()->pluck('category_id')->unique())
+                ->get(['id', 'name']),
+            'products' => fn () => $products()->values(),
+            'paymentMethods' => fn () => PaymentMethod::forChannel(OrderChannel::Online)->get()
+                ->map(fn (PaymentMethod $m) => [
+                    'id' => $m->id,
+                    'name' => $m->name,
+                    'type' => $m->type->value,
+                    'bank_name' => $m->bank_name,
+                    'account_number' => $m->account_number,
+                    'account_holder' => $m->account_holder,
+                    'qris_image_url' => $m->qris_image_url,
+                ]),
+            'trackedOrders' => fn () => $tracker->active(),
+            'hasOrderHistory' => fn () => $tracker->hasHistory(),
+            'storeSettings' => fn () => $this->storeSettings(StoreSetting::current()),
+        ]);
+    }
+
+    /**
+     * price = harga yang dibayar hari ini; normal_price terisi hanya bila sedang promo (untuk harga coret).
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function onlineProducts(PromotionCatalog $catalog): Collection
+    {
         $online = Product::online()->orderBy('sort_order')->orderBy('name')->get();
         $promotions = $catalog->activeFor($online->modelKeys());
 
-        // price = harga yang dibayar hari ini; normal_price terisi hanya bila sedang promo (untuk harga coret)
-        $products = $online->map(function (Product $p) use ($catalog, $promotions) {
+        return $online->map(function (Product $p) use ($catalog, $promotions) {
             $priced = $catalog->priceFor($p, $promotions->get($p->id), OrderChannel::Online);
             $promo = $priced['promotion_id'] ? $promotions->get($p->id) : null;
 
@@ -40,36 +70,22 @@ class MenuController extends Controller
                 'is_sold_out' => $p->is_sold_out,
             ];
         });
+    }
 
-        return Inertia::render('Menu/Index', [
-            'categories' => Category::where('is_active', true)->ordered()
-                ->whereIn('id', $products->pluck('category_id')->unique())
-                ->get(['id', 'name']),
-            'products' => $products->values(),
-            'paymentMethods' => PaymentMethod::forChannel(OrderChannel::Online)->get()
-                ->map(fn (PaymentMethod $m) => [
-                    'id' => $m->id,
-                    'name' => $m->name,
-                    'type' => $m->type->value,
-                    'bank_name' => $m->bank_name,
-                    'account_number' => $m->account_number,
-                    'account_holder' => $m->account_holder,
-                    'qris_image_url' => $m->qris_image_url,
-                ]),
-            'trackedOrders' => fn () => $tracker->active(),
-            'hasOrderHistory' => fn () => $tracker->hasHistory(),
-            'storeSettings' => [
-                'name' => $settings->store_name,
-                'address' => $settings->address,
-                'is_open' => $settings->is_open,
-                'online_order_enabled' => $settings->online_order_enabled,
-                'accepts_orders' => $settings->acceptsOnlineOrders(),
-                'delivery_note' => $settings->delivery_note,
-                'min_order' => $settings->min_order,
-                'allow_pickup' => $settings->allow_pickup,
-                'allow_delivery' => $settings->allow_delivery,
-                'operating_hours' => $settings->operating_hours,
-            ],
-        ]);
+    /** @return array<string, mixed> */
+    private function storeSettings(StoreSetting $settings): array
+    {
+        return [
+            'name' => $settings->store_name,
+            'address' => $settings->address,
+            'is_open' => $settings->is_open,
+            'online_order_enabled' => $settings->online_order_enabled,
+            'accepts_orders' => $settings->acceptsOnlineOrders(),
+            'delivery_note' => $settings->delivery_note,
+            'min_order' => $settings->min_order,
+            'allow_pickup' => $settings->allow_pickup,
+            'allow_delivery' => $settings->allow_delivery,
+            'operating_hours' => $settings->operating_hours,
+        ];
     }
 }
