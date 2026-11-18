@@ -6,6 +6,7 @@
     import PageHeader from '../../components/PageHeader.svelte';
     import Pagination from '../../components/Pagination.svelte';
     import EmptyState from '../../components/EmptyState.svelte';
+    import SearchSelect from '../../components/SearchSelect.svelte';
     import { dateTime } from '../../lib/format.js';
 
     let { logs, users = [], subjectTypes = [], filters = {} } = $props();
@@ -13,6 +14,9 @@
     let userId = $state(untrack(() => (filters?.user_id ? String(filters.user_id) : '')));
     let subjectType = $state(untrack(() => filters?.subject_type ?? ''));
     let expanded = $state({});
+
+    const userOptions = $derived([{ value: '', label: 'Semua user' }, ...users.map((u) => ({ value: String(u.id), label: u.name }))]);
+    const subjectOptions = $derived([{ value: '', label: 'Semua entitas' }, ...subjectTypes.map((t) => ({ value: t, label: t }))]);
 
     function apply() {
         const params = {};
@@ -39,14 +43,8 @@
 <PageHeader title="Log Aktivitas" subtitle="Siapa mengubah apa dan kapan" />
 
 <div class="mb-6 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-    <select class="input sm:w-auto" bind:value={userId} onchange={apply} aria-label="User">
-        <option value="">Semua user</option>
-        {#each users as user (user.id)}<option value={String(user.id)}>{user.name}</option>{/each}
-    </select>
-    <select class="input sm:w-auto" bind:value={subjectType} onchange={apply} aria-label="Entitas">
-        <option value="">Semua entitas</option>
-        {#each subjectTypes as type (type)}<option value={type}>{type}</option>{/each}
-    </select>
+    <SearchSelect class="sm:w-56" options={userOptions} bind:value={userId} onchange={apply} ariaLabel="User" searchPlaceholder="Cari user…" />
+    <SearchSelect class="sm:w-56" options={subjectOptions} bind:value={subjectType} onchange={apply} ariaLabel="Entitas" searchPlaceholder="Cari entitas…" />
 </div>
 
 {#snippet detail(log)}

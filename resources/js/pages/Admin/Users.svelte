@@ -7,6 +7,7 @@
     import PageHeader from '../../components/PageHeader.svelte';
     import Modal from '../../components/Modal.svelte';
     import Toggle from '../../components/Toggle.svelte';
+    import SearchSelect from '../../components/SearchSelect.svelte';
     import { dateTime } from '../../lib/format.js';
 
     let { users = [], roles = [] } = $props();
@@ -144,9 +145,7 @@
             </div>
             <div>
                 <label class="label" for="u-role">Role</label>
-                <select id="u-role" class="input" bind:value={form.role}>
-                    {#each roles as role (role.value)}<option value={role.value}>{role.label}</option>{/each}
-                </select>
+                <SearchSelect id="u-role" options={roles} bind:value={form.role} invalid={!!form.errors.role} />
                 {#if form.errors.role}<p class="error">{form.errors.role}</p>{/if}
             </div>
         </div>

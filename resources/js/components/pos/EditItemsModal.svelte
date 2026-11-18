@@ -3,6 +3,7 @@
     import Modal from '../Modal.svelte';
     import QtyStepper from '../QtyStepper.svelte';
     import ErrorSummary from './ErrorSummary.svelte';
+    import SearchSelect from '../SearchSelect.svelte';
     import { rupiah } from '../../lib/format.js';
 
     /** Ubah item order online sebelum dikonfirmasi (misal ada yang habis). */
@@ -22,6 +23,7 @@
 
     const total = $derived(items.reduce((sum, i) => sum + (productById[i.product_id]?.price ?? i.price) * i.quantity, 0));
     const addable = $derived(products.filter((p) => !p.is_sold_out && !items.some((i) => i.product_id === p.id)));
+    const addOptions = $derived(addable.map((p) => ({ value: p.id, label: p.name, hint: rupiah(p.price) })));
 
     function setQty(productId, quantity) {
         items = quantity <= 0 ? items.filter((i) => i.product_id !== productId) : items.map((i) => (i.product_id === productId ? { ...i, quantity } : i));
@@ -62,10 +64,16 @@
             {/each}
         </ul>
         <div class="flex gap-2">
-            <select class="input flex-1" bind:value={addId} aria-label="Tambah produk">
-                <option value="">+ Tambah produk…</option>
-                {#each addable as product (product.id)}<option value={product.id}>{product.name} — {rupiah(product.price)}</option>{/each}
-            </select>
+            <SearchSelect
+                class="min-w-0 flex-1"
+                options={addOptions}
+                bind:value={addId}
+                ariaLabel="Tambah produk"
+                placeholder="+ Tambah produk…"
+                searchPlaceholder="Cari nama produk…"
+                emptyText="Produk tidak ditemukan"
+                searchable={true}
+            />
             <button type="button" class="btn-secondary" disabled={!addId} onclick={addProduct}>Tambah</button>
         </div>
         <div class="flex items-baseline justify-between rounded-2xl bg-paper px-4 py-3">

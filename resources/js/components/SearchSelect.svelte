@@ -6,22 +6,27 @@
     import { clickOutside, anchorStyle, onViewportChange } from '../lib/popover.js';
 
     /**
-     * Pilihan dengan pencarian (ala select2).
+     * Pilihan dengan pencarian (ala select2), pengganti <select>.
      * options: [{ value, label, hint? }] — hint tampil di kanan (mis. harga).
+     * searchable: 'auto' = kolom cari hanya muncul bila opsi lebih dari SEARCH_THRESHOLD.
      */
     let {
         options = [],
         value = $bindable(null),
         id = undefined,
+        ariaLabel = undefined,
         placeholder = 'Pilih…',
         searchPlaceholder = 'Cari…',
         emptyText = 'Tidak ada hasil',
+        searchable = 'auto',
         invalid = false,
+        class: className = '',
         onchange,
     } = $props();
 
     /** Batas baris yang dirender sekaligus agar tetap ringan untuk daftar panjang. */
     const MAX_VISIBLE = 100;
+    const SEARCH_THRESHOLD = 7;
     const PANEL_HEIGHT = 320;
     const uid = `ss-${Math.random().toString(36).slice(2, 9)}`;
 
@@ -33,22 +38,24 @@
     let searchInput = $state();
     let listbox = $state();
 
+    const showSearch = $derived(searchable === 'auto' ? options.length > SEARCH_THRESHOLD : Boolean(searchable));
     const selected = $derived(options.find((option) => option.value === value) ?? null);
+    const triggerLabel = $derived(ariaLabel ? `${ariaLabel}: ${selected?.label ?? placeholder}` : undefined);
     const matches = $derived.by(() => {
-        const term = query.trim().toLowerCase();
+        const term = showSearch ? query.trim().toLowerCase() : '';
         const found = term ? options.filter((option) => option.label.toLowerCase().includes(term)) : options;
         return found.slice(0, MAX_VISIBLE);
     });
+    const activeId = $derived(matches[activeIndex] ? `${uid}-opt-${activeIndex}` : undefined);
 
     async function openPanel() {
         if (open) return;
         query = '';
         panelStyle = anchorStyle(trigger, { height: PANEL_HEIGHT });
         open = true;
-        const current = options.findIndex((option) => option.value === value);
-        activeIndex = Math.max(0, current);
+        activeIndex = Math.max(0, options.findIndex((option) => option.value === value));
         await tick();
-        searchInput?.focus();
+        (showSearch ? searchInput : listbox)?.focus();
         scrollActiveIntoView();
     }
 
@@ -80,14 +87,23 @@
         scrollActiveIntoView();
     }
 
-    function onSearchKeydown(event) {
+    function jump(index) {
+        activeIndex = index;
+        scrollActiveIntoView();
+    }
+
+    /** Navigasi keyboard: dipasang di kolom cari, atau di listbox bila tanpa kolom cari. */
+    function onListKeydown(event) {
+        const chooseActive = () => matches[activeIndex] && choose(matches[activeIndex]);
         const actions = {
             ArrowDown: () => move(1),
             ArrowUp: () => move(-1),
-            Home: () => { activeIndex = 0; scrollActiveIntoView(); },
-            End: () => { activeIndex = Math.max(0, matches.length - 1); scrollActiveIntoView(); },
-            Enter: () => matches[activeIndex] && choose(matches[activeIndex]),
+            Home: () => jump(0),
+            End: () => jump(Math.max(0, matches.length - 1)),
+            Enter: chooseActive,
             Escape: () => close(true),
+            // Spasi memilih hanya bila tidak ada kolom cari (di kolom cari spasi adalah teks)
+            ...(showSearch ? {} : { ' ': chooseActive }),
         };
         const action = actions[event.key];
         if (!action) return;
@@ -104,12 +120,13 @@
     }
 </script>
 
-<div class="relative" use:clickOutside={() => close()} onfocusout={(e) => open && !e.currentTarget.contains(e.relatedTarget) && close()}>
+<div class="relative {className}" use:clickOutside={() => close()} onfocusout={(e) => open && !e.currentTarget.contains(e.relatedTarget) && close()}>
     <button
         bind:this={trigger}
         {id}
         type="button"
-        class="input flex items-center gap-2 text-left {invalid ? 'border-brand-500' : ''} {open ? 'ring-2 ring-ink/10' : ''}"
+        class="input flex items-center gap-2 text-left {invalid ? 'border-brand-500' : ''} {open ? 'ring-4 ring-ink/5' : ''}"
+        aria-label={triggerLabel}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls="{uid}-list"
@@ -123,29 +140,40 @@
 
     {#if open}
         <div class="fixed z-[70] flex animate-fade-in flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-float" style={panelStyle}>
-            <div class="relative border-b border-line p-2">
-                <Search size={16} class="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-faint" aria-hidden="true" />
-                <input
-                    bind:this={searchInput}
-                    bind:value={query}
-                    type="text"
-                    class="input min-h-10 rounded-xl pl-9 text-sm"
-                    role="combobox"
-                    aria-label={searchPlaceholder}
-                    aria-autocomplete="list"
-                    aria-expanded="true"
-                    aria-controls="{uid}-list"
-                    aria-activedescendant={matches[activeIndex] ? `${uid}-opt-${activeIndex}` : undefined}
-                    placeholder={searchPlaceholder}
-                    autocomplete="off"
-                    onkeydown={onSearchKeydown}
-                    oninput={() => (activeIndex = 0)}
-                />
-            </div>
-            <ul bind:this={listbox} id="{uid}-list" role="listbox" class="max-h-64 min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5">
+            {#if showSearch}
+                <div class="relative border-b border-line p-2">
+                    <Search size={16} class="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-faint" aria-hidden="true" />
+                    <input
+                        bind:this={searchInput}
+                        bind:value={query}
+                        type="text"
+                        class="input min-h-10 rounded-xl pl-9 text-sm"
+                        role="combobox"
+                        aria-label={searchPlaceholder}
+                        aria-autocomplete="list"
+                        aria-expanded="true"
+                        aria-controls="{uid}-list"
+                        aria-activedescendant={activeId}
+                        placeholder={searchPlaceholder}
+                        autocomplete="off"
+                        onkeydown={onListKeydown}
+                        oninput={() => (activeIndex = 0)}
+                    />
+                </div>
+            {/if}
+            <ul
+                bind:this={listbox}
+                id="{uid}-list"
+                role="listbox"
+                tabindex="-1"
+                aria-label={ariaLabel}
+                aria-activedescendant={showSearch ? undefined : activeId}
+                class="max-h-64 min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5 focus:outline-none"
+                onkeydown={showSearch ? undefined : onListKeydown}
+            >
                 {#each matches as option, index (option.value)}
                     {@const isSelected = option.value === value}
-                    <!-- Keyboard ditangani input pencarian (pola combobox + aria-activedescendant) -->
+                    <!-- Keyboard ditangani kolom cari / listbox (pola aria-activedescendant) -->
                     <!-- svelte-ignore a11y_click_events_have_key_events -->
                     <li
                         id="{uid}-opt-{index}"

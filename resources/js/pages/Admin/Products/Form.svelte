@@ -8,10 +8,12 @@
     import PageHeader from '../../../components/PageHeader.svelte';
     import MoneyInput from '../../../components/MoneyInput.svelte';
     import Toggle from '../../../components/Toggle.svelte';
+    import SearchSelect from '../../../components/SearchSelect.svelte';
 
     let { product = null, categories = [] } = $props();
 
     const isEdit = $derived(product !== null);
+    const categoryOptions = $derived(categories.map((c) => ({ value: c.id, label: c.is_active ? c.name : `${c.name} (nonaktif)` })));
 
     const form = useForm(() => ({
         category_id: product?.category_id ?? categories.find((c) => c.is_active)?.id ?? '',
@@ -74,11 +76,14 @@
             </div>
             <div>
                 <label class="label" for="category">Kategori</label>
-                <select id="category" class="input" bind:value={form.category_id} required>
-                    {#each categories as category (category.id)}
-                        <option value={category.id}>{category.name}{category.is_active ? '' : ' (nonaktif)'}</option>
-                    {/each}
-                </select>
+                <SearchSelect
+                    id="category"
+                    options={categoryOptions}
+                    bind:value={form.category_id}
+                    placeholder="Pilih kategori…"
+                    searchPlaceholder="Cari kategori…"
+                    invalid={!!form.errors.category_id}
+                />
                 {#if form.errors.category_id}<p class="error">{form.errors.category_id}</p>{/if}
             </div>
             <div>

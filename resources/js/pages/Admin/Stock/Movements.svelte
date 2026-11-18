@@ -6,6 +6,7 @@
     import PageHeader from '../../../components/PageHeader.svelte';
     import Pagination from '../../../components/Pagination.svelte';
     import EmptyState from '../../../components/EmptyState.svelte';
+    import SearchSelect from '../../../components/SearchSelect.svelte';
     import { dateTime } from '../../../lib/format.js';
 
     let { movements, products = [], types = [], filters = {} } = $props();
@@ -19,6 +20,9 @@
         penyesuaian: 'bg-amber-soft text-amber-ink',
         retur: 'border border-line-strong text-ink-soft',
     };
+
+    const productOptions = $derived([{ value: '', label: 'Semua produk' }, ...products.map((p) => ({ value: String(p.id), label: p.name }))]);
+    const typeOptions = $derived([{ value: '', label: 'Semua jenis' }, ...types]);
 
     function apply() {
         const params = {};
@@ -37,14 +41,8 @@
 </PageHeader>
 
 <div class="mb-6 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-    <select class="input sm:w-auto" bind:value={productId} onchange={apply} aria-label="Produk">
-        <option value="">Semua produk</option>
-        {#each products as product (product.id)}<option value={String(product.id)}>{product.name}</option>{/each}
-    </select>
-    <select class="input sm:w-auto" bind:value={type} onchange={apply} aria-label="Jenis">
-        <option value="">Semua jenis</option>
-        {#each types as option (option.value)}<option value={option.value}>{option.label}</option>{/each}
-    </select>
+    <SearchSelect class="sm:w-64" options={productOptions} bind:value={productId} onchange={apply} ariaLabel="Produk" searchPlaceholder="Cari nama produk…" emptyText="Produk tidak ditemukan" />
+    <SearchSelect class="sm:w-48" options={typeOptions} bind:value={type} onchange={apply} ariaLabel="Jenis" />
 </div>
 
 {#snippet typeBadge(movement)}

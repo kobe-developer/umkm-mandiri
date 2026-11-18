@@ -10,7 +10,18 @@
      * value/min/today berupa string 'YYYY-MM-DD'. Hanya tanggal kalender (tanpa jam),
      * jadi zona waktu browser tidak berpengaruh; `today` sebaiknya dari server (WIB).
      */
-    let { value = $bindable(''), min = null, today = null, id = undefined, placeholder = 'Pilih tanggal', invalid = false, onchange } = $props();
+    let {
+        value = $bindable(''),
+        min = null,
+        max = null,
+        today = null,
+        id = undefined,
+        ariaLabel = undefined,
+        placeholder = 'Pilih tanggal',
+        invalid = false,
+        class: className = '',
+        onchange,
+    } = $props();
 
     const PANEL_HEIGHT = 380;
     const PANEL_WIDTH = 296;
@@ -58,8 +69,17 @@
         });
     });
 
-    const isDisabled = (iso) => Boolean(min) && iso < min;
+    const isDisabled = (iso) => (Boolean(min) && iso < min) || (Boolean(max) && iso > max);
     const display = $derived(parseIso(value) ? displayFormatter.format(parseIso(value)) : '');
+    const triggerLabel = $derived(ariaLabel ? `${ariaLabel}: ${display || placeholder}` : undefined);
+
+    /** Tanggal awal yang difokus: nilai sekarang, atau hari ini yang dijepit ke rentang min–max. */
+    function initialFocus() {
+        if (value) return value;
+        if (min && todayIso < min) return min;
+        if (max && todayIso > max) return max;
+        return todayIso;
+    }
 
     async function focusDay(iso) {
         focusedIso = iso;
@@ -70,8 +90,7 @@
     async function openPanel() {
         panelStyle = anchorStyle(trigger, { height: PANEL_HEIGHT, width: PANEL_WIDTH });
         open = true;
-        const start = value || (min && min > todayIso ? min : todayIso);
-        await focusDay(start);
+        await focusDay(initialFocus());
     }
 
     $effect(() => {
@@ -119,12 +138,13 @@
     }
 </script>
 
-<div class="relative" use:clickOutside={() => close()} onfocusout={(e) => open && !e.currentTarget.contains(e.relatedTarget) && close()}>
+<div class="relative {className}" use:clickOutside={() => close()} onfocusout={(e) => open && !e.currentTarget.contains(e.relatedTarget) && close()}>
     <button
         bind:this={trigger}
         {id}
         type="button"
-        class="input flex items-center gap-2 text-left {invalid ? 'border-brand-500' : ''} {open ? 'ring-2 ring-ink/10' : ''}"
+        class="input flex items-center gap-2 text-left {invalid ? 'border-brand-500' : ''} {open ? 'ring-4 ring-ink/5' : ''}"
+        aria-label={triggerLabel}
         aria-haspopup="dialog"
         aria-expanded={open}
         onclick={() => (open ? close() : openPanel())}

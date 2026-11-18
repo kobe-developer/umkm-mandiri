@@ -4,6 +4,7 @@
     import QrCode from '@lucide/svelte/icons/qr-code';
     import ImageUp from '@lucide/svelte/icons/image-up';
     import Toggle from '../Toggle.svelte';
+    import SearchSelect from '../SearchSelect.svelte';
 
     /** Form metode pembayaran (dipakai di dalam Modal). */
     let { method = null, types = [], channels = [], formId, onsaved } = $props();
@@ -55,9 +56,7 @@
         </div>
         <div>
             <label class="label" for="pm-type">Tipe</label>
-            <select id="pm-type" class="input" bind:value={form.type}>
-                {#each types as type (type.value)}<option value={type.value}>{type.label}</option>{/each}
-            </select>
+            <SearchSelect id="pm-type" options={types} bind:value={form.type} invalid={!!form.errors.type} />
             {#if form.errors.type}<p class="error">{form.errors.type}</p>{/if}
         </div>
     </div>
