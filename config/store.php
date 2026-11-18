@@ -24,4 +24,17 @@ return [
 
     // Maksimum qty per item dalam satu order
     'max_item_quantity' => 50,
+
+    // Web push: hanya endpoint HTTPS milik layanan push browser yang diterima (mencegah SSRF,
+    // karena endpoint dikirim oleh pelanggan anonim lalu server melakukan request ke sana).
+    'push_endpoint_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) env(
+        'PUSH_ENDPOINT_HOSTS',
+        'fcm.googleapis.com,push.services.mozilla.com,push.apple.com,notify.windows.com',
+    ))))),
+
+    // Maksimal perangkat yang bisa berlangganan notifikasi untuk satu order online
+    'push_max_devices_per_order' => 3,
+
+    // Langganan push milik order yang sudah final dihapus setelah sekian hari
+    'push_order_retention_days' => 2,
 ];

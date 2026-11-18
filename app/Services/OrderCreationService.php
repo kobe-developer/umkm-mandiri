@@ -24,6 +24,7 @@ class OrderCreationService
         private readonly OrderNumberGenerator $numbers,
         private readonly CustomerService $customers,
         private readonly OrderLifecycleService $lifecycle,
+        private readonly OrderPushNotifier $push,
     ) {}
 
     /**
@@ -128,6 +129,7 @@ class OrderCreationService
         // Broadcast langsung (bukan antrean) agar kasir menerima order seketika;
         // bila Reverb mati, order tetap tersimpan dan kasir memakai polling cadangan.
         rescue(fn () => OrderCreated::dispatch($order));
+        rescue(fn () => $this->push->newOnlineOrder($order));
 
         return $order;
     }

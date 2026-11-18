@@ -10,10 +10,15 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 
 class Order extends Model
 {
+    /** Notifiable + push: pelanggan tanpa login menerima web push lewat order miliknya. */
+    use HasPushSubscriptions, Notifiable;
+
     protected $fillable = [
         'order_number', 'channel', 'status', 'payment_status', 'customer_id', 'customer_name',
         'whatsapp_number', 'table_number', 'fulfillment', 'address', 'notes', 'subtotal',

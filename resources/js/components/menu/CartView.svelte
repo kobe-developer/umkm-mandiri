@@ -48,7 +48,9 @@
                                 <p class="text-[15px] leading-snug font-semibold text-ink">{line.product.name}</p>
                                 <p class="num shrink-0 text-[15px] font-semibold text-ink">{rupiah(line.product.price * line.quantity)}</p>
                             </div>
-                            <p class="num mt-0.5 text-[13px] text-muted">{rupiah(line.product.price)} / porsi</p>
+                            <p class="num mt-0.5 text-[13px] text-muted">
+                                {#if line.product.normal_price > line.product.price}<span class="mr-1 text-faint line-through">{rupiah(line.product.normal_price)}</span>{/if}{rupiah(line.product.price)} / porsi
+                            </p>
                             {#if soldOut}
                                 <p class="mt-1.5 text-xs font-semibold text-brand-600">Habis — hapus item ini untuk melanjutkan.</p>
                             {/if}

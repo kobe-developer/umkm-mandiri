@@ -34,7 +34,7 @@
         {#each order.items as item (item.id)}
             <div class="mb-1">
                 <p>{item.product_name}</p>
-                <div class="flex justify-between"><span>{item.quantity} x {rupiah(item.unit_price)}</span><span>{rupiah(item.subtotal)}</span></div>
+                <div class="flex justify-between"><span>{item.quantity} x {rupiah(item.unit_price)}{#if item.is_promo} (promo){/if}</span><span>{rupiah(item.subtotal)}</span></div>
                 {#if item.notes}<p class="text-[11px]">  * {item.notes}</p>{/if}
             </div>
         {/each}

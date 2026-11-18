@@ -3,6 +3,7 @@
     import Lock from '@lucide/svelte/icons/lock';
     import ShieldCheck from '@lucide/svelte/icons/shield-check';
     import PageHeader from '../../components/PageHeader.svelte';
+    import StaffPushCard from '../../components/StaffPushCard.svelte';
 
     let { hasPin } = $props();
 
@@ -82,4 +83,6 @@
             <button class="btn-primary mt-2 w-full" type="submit" disabled={pinForm.processing}>{hasPin ? 'Ganti PIN' : 'Simpan PIN'}</button>
         </form>
     {/if}
+
+    <StaffPushCard />
 </div>

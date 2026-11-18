@@ -3,8 +3,10 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\Menu;
 use App\Http\Controllers\Pos;
+use App\Http\Controllers\PushSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +15,10 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::redirect('/', '/menu');
+
+// PWA manifest (menu pelanggan & POS staf)
+Route::get('/manifest.webmanifest', [ManifestController::class, 'menu'])->name('manifest.menu');
+Route::get('/manifest-pos.webmanifest', [ManifestController::class, 'pos'])->name('manifest.pos');
 
 Route::prefix('menu')->name('menu.')->group(function () {
     Route::get('/', [Menu\MenuController::class, 'index'])->name('index');
@@ -36,6 +42,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/akun', [AccountController::class, 'edit'])->name('account.edit');
     Route::put('/akun/password', [AccountController::class, 'updatePassword'])->name('account.password');
     Route::put('/akun/pin', [AccountController::class, 'updatePin'])->middleware('role:owner')->name('account.pin');
+
+    // Web push perangkat staf (order online baru)
+    Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->middleware('throttle:30,1')->name('push.store');
+    Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->middleware('throttle:30,1')->name('push.destroy');
 });
 
 /*
@@ -83,6 +93,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:owner'])->grou
     Route::get('/shift', [Admin\ShiftReportController::class, 'index'])->name('shifts.index');
 
     Route::resource('produk', Admin\ProductController::class)->except('show')->parameters(['produk' => 'product'])->names('products');
+    Route::resource('promo', Admin\PromotionController::class)->only(['index', 'store', 'update', 'destroy'])->parameters(['promo' => 'promotion'])->names('promotions');
     Route::resource('kategori', Admin\CategoryController::class)->only(['index', 'store', 'update', 'destroy'])->parameters(['kategori' => 'category'])->names('categories');
     Route::resource('pembayaran', Admin\PaymentMethodController::class)->only(['index', 'store', 'update', 'destroy'])->parameters(['pembayaran' => 'paymentMethod'])->names('payment-methods');
 

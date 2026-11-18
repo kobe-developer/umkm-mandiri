@@ -7,11 +7,15 @@ use App\Models\Product;
 use App\Support\BusinessRule;
 
 /**
- * Menghitung ulang harga di server dari tabel products.
- * Harga dari browser tidak pernah dipakai.
+ * Menghitung ulang harga di server dari tabel products (+ promo yang berlaku hari ini
+ * untuk kanal order). Harga dari browser tidak pernah dipakai.
  */
 class OrderPricer
 {
+    public function __construct(
+        private readonly PromotionCatalog $promotions = new PromotionCatalog,
+    ) {}
+
     /**
      * @param  list<array{product_id: int, quantity: int, notes?: ?string}>  $items
      * @return array{lines: list<array<string, mixed>>, subtotal: int}
@@ -21,6 +25,7 @@ class OrderPricer
         BusinessRule::check($items !== [], 'Keranjang masih kosong.', 'items');
 
         $products = Product::with('category')->whereIn('id', array_column($items, 'product_id'))->get()->keyBy('id');
+        $promotions = $this->promotions->activeFor($products->keys());
 
         $unavailable = [];
         $lines = [];
@@ -33,14 +38,15 @@ class OrderPricer
             }
 
             $quantity = (int) $item['quantity'];
+            $price = $this->promotions->priceFor($product, $promotions->get($product->id), $channel);
             $lines[] = [
                 'product_id' => $product->id,
                 'product_name' => $product->name,
                 'category_name' => $product->category?->name,
-                'unit_price' => $product->price,
+                ...$price,
                 'quantity' => $quantity,
                 'notes' => $this->cleanNotes($item['notes'] ?? null),
-                'subtotal' => $product->price * $quantity,
+                'subtotal' => $price['unit_price'] * $quantity,
             ];
         }
 

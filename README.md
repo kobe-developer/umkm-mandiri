@@ -16,6 +16,7 @@ docker compose run --rm app php artisan key:generate
 docker compose up -d
 docker compose exec app php artisan migrate --seed
 docker compose exec app php artisan storage:link
+docker compose exec app php artisan webpush:vapid                 # kunci VAPID untuk web push (sekali saja)
 docker compose run --rm node sh -c "npm ci && npm run build"   # atau: docker compose --profile dev up node (hot reload)
 ```
 
@@ -44,7 +45,7 @@ Password awal bisa diatur lewat `SEED_OWNER_PASSWORD`, `SEED_CASHIER_PASSWORD`, 
 | `app` | PHP-FPM 8.4 (Laravel) |
 | `nginx` | Web server + proxy WebSocket `/app` → Reverb |
 | `mysql` | MySQL 8.4 (di-tuning untuk VPS RAM 2 GB) |
-| `queue` | `queue:work` (broadcast event order) |
+| `queue` | `queue:work` (broadcast event order, kirim web push) |
 | `scheduler` | `schedule:work` — buka/tutup toko otomatis tiap menit, backup DB harian 03:00 |
 | `reverb` | WebSocket notifikasi order online baru |
 | `node` (profil `dev`) | Vite dev server, hanya untuk development |
@@ -74,6 +75,10 @@ app/Services/              Logika bisnis
   StoreStatusService         jadwal buka/tutup otomatis + override manual
   ReportService              agregat dashboard & laporan
   OwnerPinVerifier           verifikasi PIN owner untuk void kasir
+  PromotionCatalog           harga promo yang berlaku hari ini per produk & kanal
+  PromotionService           tambah/ubah promo (harga < normal, periode tidak bentrok)
+  OrderPushNotifier          kapan web push dikirim (order baru → staf, status → pelanggan)
+  PushSubscriptionService    langganan push perangkat staf (User) & pelanggan (Order)
 app/Http/Controllers/{Menu,Pos,Admin}/   3 area route: /menu (publik), /pos (kasir+owner), /admin (owner)
 resources/js/pages/{Menu,Pos,Admin}/     Halaman Svelte (Inertia)
 resources/js/components/                 Komponen bersama
@@ -87,7 +92,16 @@ resources/js/components/                 Komponen bersama
 - Omzet laporan = order **Selesai + Lunas** saja. Omzet per kategori/produk dihitung dari subtotal item (sebelum diskon order).
 - Transaksi (buat order, terima pembayaran) hanya bisa saat shift kasir terbuka.
 - Data transaksi tidak pernah dihapus permanen; produk dihapus secara soft delete.
-- Notifikasi order baru: WebSocket (Reverb) + polling cadangan tiap 10 detik.
+- Notifikasi order baru: WebSocket (Reverb) + polling cadangan tiap 10 detik, plus **web push** ke perangkat owner/kasir yang mengaktifkannya (banner di POS atau menu **Akun saya**).
+- **Promo** (`/admin/promo`, owner): harga promo per produk, berlaku dari 00:00 tanggal mulai sampai 23:59 tanggal berakhir (WIB), untuk kanal yang dipilih. Harga promo wajib lebih kecil dari harga normal; satu produk tidak boleh punya dua promo dengan periode beririsan (apa pun kanalnya). Harga promo dihitung ulang di server; `order_items` menyimpan `original_price` (harga normal) dan `promotion_id`. Di `/menu` ada tab **Promo** (harga normal dicoret), produk promo tetap tampil di kategorinya.
+- **Web push pelanggan**: centang "Kabari saya lewat notifikasi" saat checkout → notifikasi saat Dikonfirmasi, Diproses, Siap/Diantar, Selesai, Dibatalkan, dan pembayaran Lunas. Langganan terikat ke order (tanpa login), maks. 3 perangkat per order, dihapus otomatis 2 hari setelah order final.
+
+### Web push: syarat & catatan
+
+- Wajib **HTTPS** (atau `http://localhost`). Kunci `VAPID_*` di `.env` tidak boleh diganti setelah dipakai.
+- iPhone/iPad (iOS 16.4+): web push hanya jalan bila situs dipasang lewat **Bagikan → Tambahkan ke Layar Utama** lalu dibuka dari layar utama. Manifest PWA: `/manifest.webmanifest` (menu) dan `/manifest-pos.webmanifest` (POS).
+- Endpoint langganan hanya diterima dari layanan push browser yang dikenal (`PUSH_ENDPOINT_HOSTS`) untuk mencegah SSRF.
+- Pengiriman lewat antrean: servis `queue` harus berjalan.
 
 ## Keputusan atas pertanyaan terbuka PRD
 

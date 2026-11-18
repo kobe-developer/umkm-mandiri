@@ -1,6 +1,7 @@
 import '../css/app.css';
 import { createInertiaApp } from '@inertiajs/svelte';
 import AppLayout from './layouts/AppLayout.svelte';
+import { registerServiceWorker } from './lib/push.js';
 
 // Halaman tanpa layout back-office: menu publik, login, struk, halaman error
 const STANDALONE = [/^Menu\//, /^Auth\//, /^Error$/, /\/Receipt$/];
@@ -18,3 +19,6 @@ createInertiaApp({
     layout: (name) => (STANDALONE.some((pattern) => pattern.test(name)) ? undefined : AppLayout),
     progress: { color: '#b93a1a' },
 });
+
+// Service worker untuk web push & agar situs bisa dipasang (PWA)
+window.addEventListener('load', () => registerServiceWorker());

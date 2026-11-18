@@ -40,6 +40,11 @@ class Product extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function promotions(): HasMany
+    {
+        return $this->hasMany(Promotion::class);
+    }
+
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);

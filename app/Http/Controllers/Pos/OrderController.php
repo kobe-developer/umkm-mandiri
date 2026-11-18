@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\StoreSetting;
+use App\Services\PromotionCatalog;
 use App\Support\WhatsAppLink;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -53,7 +54,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show(Request $request, Order $order): Response
+    public function show(Request $request, Order $order, PromotionCatalog $catalog): Response
     {
         $order->load(['items', 'paymentMethod', 'plannedPaymentMethod', 'cashier']);
         $settings = StoreSetting::current();
@@ -66,8 +67,7 @@ class OrderController extends Controller
             'paymentMethods' => PaymentMethod::forChannel($order->channel)->get()
                 ->map(fn (PaymentMethod $m) => ['id' => $m->id, 'name' => $m->name, 'type' => $m->type->value, 'qris_image_url' => $m->qris_image_url]),
             'products' => $order->isOnline() && $order->status === OrderStatus::New
-                ? Product::online()->orderBy('name')->get(['id', 'name', 'price', 'is_available', 'track_stock', 'stock'])
-                    ->map(fn (Product $p) => ['id' => $p->id, 'name' => $p->name, 'price' => $p->price, 'is_sold_out' => $p->is_sold_out])
+                ? $this->editableOnlineProducts($catalog)
                 : [],
             'isOnline' => $order->channel === OrderChannel::Online,
         ]);
@@ -83,5 +83,19 @@ class OrderController extends Controller
             'order' => (new OrderResource($order))->resolve($request),
             'store' => $settings->only(['store_name', 'address', 'whatsapp_number', 'receipt_note']),
         ]);
+    }
+
+    /** Produk untuk mengubah item order online, dengan harga online hari ini (termasuk promo). */
+    private function editableOnlineProducts(PromotionCatalog $catalog): array
+    {
+        $products = Product::online()->orderBy('name')->get(['id', 'name', 'price', 'is_available', 'track_stock', 'stock']);
+        $promotions = $catalog->activeFor($products->modelKeys());
+
+        return $products->map(fn (Product $p) => [
+            'id' => $p->id,
+            'name' => $p->name,
+            'price' => $catalog->priceFor($p, $promotions->get($p->id), OrderChannel::Online)['unit_price'],
+            'is_sold_out' => $p->is_sold_out,
+        ])->all();
     }
 }

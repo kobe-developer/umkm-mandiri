@@ -1,9 +1,10 @@
 <script>
     import Search from '@lucide/svelte/icons/search';
     import { rupiah } from '../../lib/format.js';
+    import { promoPrice } from '../../lib/promo.js';
 
     /** Grid produk per kategori dengan pencarian. Produk habis abu-abu & tidak bisa dipilih. */
-    let { categories, products, quantities = {}, onadd } = $props();
+    let { categories, products, quantities = {}, channel = null, onadd } = $props();
 
     let activeCategory = $state('all');
     let search = $state('');
@@ -37,6 +38,7 @@
         <div class="grid grid-cols-2 gap-2.5 pt-1 sm:grid-cols-3 xl:grid-cols-4">
             {#each visible as product (product.id)}
                 {@const qty = quantities[product.id] ?? 0}
+                {@const promo = promoPrice(product, channel)}
                 <button
                     type="button"
                     disabled={product.is_sold_out}
@@ -46,7 +48,14 @@
                 >
                     <span class="line-clamp-2 pr-6 text-[14px] leading-snug font-semibold text-ink">{product.name}</span>
                     <span class="mt-3 flex items-end justify-between gap-1">
-                        <span class="num text-[15px] font-semibold text-ink">{rupiah(product.price)}</span>
+                        {#if promo !== null}
+                            <span class="num flex flex-col leading-tight">
+                                <span class="text-[12px] text-faint line-through">{rupiah(product.price)}</span>
+                                <span class="text-[15px] font-semibold text-brand-700">{rupiah(promo)}</span>
+                            </span>
+                        {:else}
+                            <span class="num text-[15px] font-semibold text-ink">{rupiah(product.price)}</span>
+                        {/if}
                         {#if product.is_sold_out}
                             <span class="rounded-full bg-paper-deep px-2 py-0.5 text-[11px] font-semibold text-muted">Habis</span>
                         {:else if product.track_stock}

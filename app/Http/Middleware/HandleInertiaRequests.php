@@ -6,6 +6,7 @@ use App\Enums\OrderChannel;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\StoreSetting;
+use App\Services\OrderPushNotifier;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -37,6 +38,8 @@ class HandleInertiaRequests extends Middleware
             'config' => [
                 'pollInterval' => config('store.poll_interval_seconds'),
                 'realtime' => config('broadcasting.default') === 'reverb',
+                // Kunci publik VAPID (aman dibagikan); null = web push belum dikonfigurasi
+                'vapidPublicKey' => OrderPushNotifier::isConfigured() ? config('webpush.vapid.public_key') : null,
             ],
         ];
     }

@@ -10,6 +10,7 @@
     import ShoppingBag from '@lucide/svelte/icons/shopping-bag';
     import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import Info from '@lucide/svelte/icons/info';
+    import BadgePercent from '@lucide/svelte/icons/badge-percent';
     import EmptyState from '../../components/EmptyState.svelte';
     import { rupiah } from '../../lib/format.js';
     import { cart } from '../../lib/cart.svelte.js';
@@ -29,19 +30,27 @@
         storeSettings.accepts_orders ? null : !storeSettings.is_open ? 'Toko sedang tutup' : 'Order online sedang tidak aktif',
     );
 
+    /** Id section khusus promo; id kategori selalu angka sehingga tidak bentrok. */
+    const PROMO_SECTION = 'promo';
+
     const sections = $derived.by(() => {
         const term = search.trim().toLowerCase();
-        return categories
-            .map((category) => ({
-                ...category,
-                products: products.filter((p) => p.category_id === category.id && (!term || p.name.toLowerCase().includes(term))),
-            }))
-            .filter((section) => section.products.length > 0);
+        const matches = (p) => !term || p.name.toLowerCase().includes(term);
+        // Produk promo tampil di tab Promo (paling depan) DAN tetap di kategori asalnya
+        const promo = { id: PROMO_SECTION, name: 'Promo', isPromo: true, products: products.filter((p) => p.normal_price && matches(p)) };
+        const byCategory = categories.map((category) => ({
+            ...category,
+            products: products.filter((p) => p.category_id === category.id && matches(p)),
+        }));
+        return [promo, ...byCategory].filter((section) => section.products.length > 0);
     });
+
+    /** dataset selalu string: kembalikan ke angka untuk id kategori. */
+    const sectionId = (raw) => (raw === PROMO_SECTION ? PROMO_SECTION : Number(raw));
 
     onMount(() => {
         cart.prune(productMap);
-        activeCategory = categories[0]?.id ?? null;
+        activeCategory = sections[0]?.id ?? null;
     });
 
     /** Selama scroll hasil klik tab, observer tidak boleh mengganti tab aktif. */
@@ -59,7 +68,7 @@
             (entries) => {
                 if (isProgrammaticScroll()) return;
                 const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-                if (visible) activeCategory = Number(visible.target.dataset.category);
+                if (visible) activeCategory = sectionId(visible.target.dataset.category);
             },
             { rootMargin: '-140px 0px -60% 0px' },
         );
@@ -136,9 +145,10 @@
                         id="tab-{section.id}"
                         type="button"
                         aria-current={active ? 'true' : undefined}
-                        class="relative shrink-0 py-3.5 text-sm font-semibold whitespace-nowrap transition {active ? 'text-ink' : 'text-muted hover:text-ink-soft'}"
+                        class="relative inline-flex shrink-0 items-center gap-1.5 py-3.5 text-sm font-semibold whitespace-nowrap transition {section.isPromo ? (active ? 'text-brand-700' : 'text-brand-600 hover:text-brand-700') : active ? 'text-ink' : 'text-muted hover:text-ink-soft'}"
                         onclick={() => scrollToCategory(section.id)}
                     >
+                        {#if section.isPromo}<BadgePercent size={16} aria-hidden="true" />{/if}
                         {section.name}
                         <span class="absolute inset-x-0 bottom-0 h-0.5 rounded-full transition {active ? 'bg-brand-600' : 'bg-transparent'}"></span>
                     </button>
@@ -160,12 +170,12 @@
             {#each sections as section (section.id)}
                 <section id="kategori-{section.id}" data-category={section.id} class="pt-6" aria-labelledby="judul-{section.id}">
                     <div class="flex items-baseline justify-between gap-3">
-                        <h2 id="judul-{section.id}" class="display text-2xl text-ink">{section.name}</h2>
+                        <h2 id="judul-{section.id}" class="display text-2xl {section.isPromo ? 'text-brand-700' : 'text-ink'}">{section.name}</h2>
                         <span class="num text-xs text-faint">{section.products.length} menu</span>
                     </div>
                     <div class="divide-y divide-line">
                         {#each section.products as product (product.id)}
-                            <ProductCard {product} />
+                            <ProductCard {product} showPromoInfo={section.isPromo} />
                         {/each}
                     </div>
                 </section>

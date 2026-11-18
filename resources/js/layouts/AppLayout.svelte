@@ -12,6 +12,7 @@
     import ClipboardList from '@lucide/svelte/icons/clipboard-list';
     import UtensilsCrossed from '@lucide/svelte/icons/utensils-crossed';
     import Tag from '@lucide/svelte/icons/tag';
+    import BadgePercent from '@lucide/svelte/icons/badge-percent';
     import Package from '@lucide/svelte/icons/package';
     import CreditCard from '@lucide/svelte/icons/credit-card';
     import Users from '@lucide/svelte/icons/users';
@@ -24,8 +25,10 @@
     import CircleAlert from '@lucide/svelte/icons/circle-alert';
     import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
     import X from '@lucide/svelte/icons/x';
+    import BellRing from '@lucide/svelte/icons/bell-ring';
     import Logo from '../components/Logo.svelte';
     import { playNotification, unlockAudio } from '../lib/sound.js';
+    import { staffPush } from '../lib/staffPush.svelte.js';
 
     let { children } = $props();
 
@@ -34,6 +37,10 @@
     const store = $derived(page.props.store);
     const pendingOnline = $derived(pos?.pending_online_count ?? 0);
     const currentUrl = $derived(page.url);
+
+    const vapidKey = $derived(page.props.config?.vapidPublicKey);
+    const push = $derived(staffPush.state);
+    const showPushPrompt = $derived(push.support === 'ready' && !push.subscribed && !push.dismissed);
 
     let moreOpen = $state(false);
     let toast = $state(null);
@@ -52,6 +59,7 @@
         { href: '/admin/transaksi', label: 'Semua Transaksi', icon: Layers },
         { href: '/admin/shift', label: 'Laporan Shift', icon: ClipboardList },
         { href: '/admin/produk', label: 'Produk', icon: UtensilsCrossed },
+        { href: '/admin/promo', label: 'Promo', icon: BadgePercent },
         { href: '/admin/kategori', label: 'Kategori', icon: Tag },
         { href: '/admin/stok', label: 'Stok', icon: Package },
         { href: '/admin/pembayaran', label: 'Metode Bayar', icon: CreditCard },
@@ -110,6 +118,8 @@
                     .listen('.order.updated', refreshPos);
             });
         }
+
+        staffPush.init(vapidKey);
 
         const unlock = () => unlockAudio();
         window.addEventListener('pointerdown', unlock, { once: true });
@@ -203,6 +213,20 @@
                 <span class="flex-1"><strong class="font-semibold">Shift belum dibuka.</strong> Buka shift untuk mencatat transaksi.</span>
                 <ChevronRight size={18} class="shrink-0 opacity-60" />
             </Link>
+        </div>
+    {/if}
+
+    {#if showPushPrompt}
+        <div class="no-print mx-auto max-w-6xl px-4 pt-4 sm:px-6 lg:px-10 lg:pt-6">
+            <div class="flex flex-wrap items-center gap-3 rounded-2xl bg-surface px-4 py-3 text-sm ring-1 ring-line">
+                <BellRing size={18} class="shrink-0 text-brand-600" aria-hidden="true" />
+                <span class="min-w-0 flex-1 text-ink-soft"><strong class="font-semibold text-ink">Aktifkan notifikasi</strong> agar order online baru tetap terdengar walau aplikasi tertutup.</span>
+                <div class="flex items-center gap-1">
+                    <button type="button" class="btn-ghost btn-sm text-muted" onclick={() => staffPush.dismissPrompt()}>Nanti</button>
+                    <button type="button" class="btn-primary btn-sm" disabled={push.busy} onclick={() => staffPush.enable(vapidKey)}>Aktifkan</button>
+                </div>
+                {#if push.error}<p class="w-full text-xs text-brand-600" role="alert">{push.error}</p>{/if}
+            </div>
         </div>
     {/if}
 

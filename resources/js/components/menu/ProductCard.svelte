@@ -1,13 +1,15 @@
 <script>
     import Plus from '@lucide/svelte/icons/plus';
     import QtyStepper from '../QtyStepper.svelte';
-    import { rupiah } from '../../lib/format.js';
+    import { rupiah, date } from '../../lib/format.js';
     import { cart, CART_MAX_QUANTITY } from '../../lib/cart.svelte.js';
 
-    let { product } = $props();
+    /** showPromoInfo: tampilkan deskripsi & masa promo (hanya di tab Promo). */
+    let { product, showPromoInfo = false } = $props();
 
     const quantity = $derived(cart.quantityOf(product.id));
     const soldOut = $derived(product.is_sold_out);
+    const onPromo = $derived(product.normal_price > product.price);
 </script>
 
 {#snippet action(overlay)}
@@ -28,13 +30,24 @@
 <article class="flex gap-4 {product.photo_url ? 'py-5' : 'items-center py-4'} {soldOut ? 'opacity-55' : ''}">
     <div class="flex min-w-0 flex-1 flex-col self-stretch">
         <h3 class="text-[15px] leading-snug font-semibold text-ink">{product.name}</h3>
+        {#if showPromoInfo && onPromo && product.promo_description}
+            <p class="mt-1 inline-flex self-start rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">{product.promo_description}</p>
+        {/if}
         {#if product.description}
             <p class="mt-1 line-clamp-2 text-[13px] leading-relaxed text-muted">{product.description}</p>
         {/if}
-        <p class="num mt-auto pt-1.5 text-[15px] font-semibold text-ink">
-            {rupiah(product.price)}
-            {#if quantity > 0}<span class="ml-1.5 text-xs font-medium text-brand-600">· {quantity} di keranjang</span>{/if}
+        <p class="num mt-auto flex flex-wrap items-baseline gap-x-2 pt-1.5 text-[15px] font-semibold">
+            {#if onPromo}
+                <span class="text-brand-700">{rupiah(product.price)}</span>
+                <span class="text-[13px] font-medium text-faint line-through"><span class="sr-only">Harga normal </span>{rupiah(product.normal_price)}</span>
+            {:else}
+                <span class="text-ink">{rupiah(product.price)}</span>
+            {/if}
+            {#if quantity > 0}<span class="text-xs font-medium text-brand-600">· {quantity} di keranjang</span>{/if}
         </p>
+        {#if showPromoInfo && onPromo && product.promo_until}
+            <p class="mt-0.5 text-xs text-muted">Promo s.d. {date(product.promo_until)}</p>
+        {/if}
     </div>
 
     {#if product.photo_url}
