@@ -36,7 +36,6 @@ services:
       - app-storage:/var/www/html/storage:ro
 
   mysql:
-    command: --mysqlx=OFF
     environment:
       MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD di .env}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD di .env}
