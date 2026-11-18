@@ -18,6 +18,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $realtime = config('broadcasting.default') === 'reverb';
 
         return [
             ...parent::share($request),
@@ -38,7 +39,10 @@ class HandleInertiaRequests extends Middleware
             'pos' => fn () => $user ? $this->posInfo($request) : null,
             'config' => [
                 'pollInterval' => config('store.poll_interval_seconds'),
-                'realtime' => config('broadcasting.default') === 'reverb',
+                'realtime' => $realtime,
+                // Key publik Reverb dikirim saat runtime: image produksi dibangun tanpa .env,
+                // jadi VITE_REVERB_APP_KEY tidak tersedia saat build aset.
+                'reverbKey' => $realtime ? config('broadcasting.connections.reverb.key') : null,
                 // Kunci publik VAPID (aman dibagikan); null = web push belum dikonfigurasi
                 'vapidPublicKey' => OrderPushNotifier::isConfigured() ? config('webpush.vapid.public_key') : null,
             ],
