@@ -1,20 +1,31 @@
 # Production: docker compose -f compose.yaml -f compose.prod.yaml up -d --build
 # Kode, vendor (--no-dev) dan aset sudah ada di dalam image; hanya storage yang di-mount.
-x-prod-app: &prod-app
-  build:
-    context: .
-    dockerfile: docker/php/Dockerfile
-    target: prod
-  image: umkm-mandiri-app:prod
+x-prod-volumes: &prod-volumes
   volumes: !override
     - ./.env:/var/www/html/.env:ro
     - app-storage:/var/www/html/storage
 
+x-prod-worker: &prod-worker
+  <<: *prod-volumes
+  image: umkm-mandiri-app:prod
+  build: !reset null # hapus build warisan dari compose.yaml
+  pull_policy: never
+  depends_on:
+    - app
+
 services:
-  app: *prod-app
-  queue: *prod-app
-  scheduler: *prod-app
-  reverb: *prod-app
+  app:
+    <<: *prod-volumes
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: prod
+    image: umkm-mandiri-app:prod
+
+  queue: *prod-worker
+  scheduler: *prod-worker
+  reverb: *prod-worker
+
   nginx:
     build:
       context: .
@@ -23,7 +34,9 @@ services:
     image: umkm-mandiri-web:prod
     volumes: !override
       - app-storage:/var/www/html/storage:ro
+
   mysql:
+    command: --mysqlx=OFF
     environment:
       MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD di .env}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD di .env}
