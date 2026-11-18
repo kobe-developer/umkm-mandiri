@@ -77,13 +77,33 @@
     }
 
     // --- Flash message → toast ---
-    $effect(() => {
-        const flash = page.props.flash ?? {};
-        const message = flash.success ?? flash.error;
+    // Sengaja TIDAK memakai $effect pada page.props.flash: partial reload (polling POS, WebSocket)
+    // mempertahankan prop `flash` lama sementara page.props diganti, sehingga toast yang sama
+    // muncul lagi tiap polling. Flash hanya dibaca saat halaman dimuat penuh dan setelah
+    // kunjungan Inertia penuh (bukan partial reload) selesai.
+    const TOAST_DURATION_MS = 4000;
+
+    function showFlash(flash) {
+        const message = flash?.success ?? flash?.error;
         if (!message) return;
         toast = { type: flash.success ? 'success' : 'error', message };
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => (toast = null), 4000);
+        toastTimer = setTimeout(() => (toast = null), TOAST_DURATION_MS);
+    }
+
+    function isFullVisit(visit) {
+        return visit.completed && !visit.only?.length && !visit.except?.length;
+    }
+
+    onMount(() => {
+        showFlash(page.props.flash);
+        const stopListening = router.on('finish', (event) => {
+            if (isFullVisit(event.detail.visit)) showFlash(page.props.flash);
+        });
+        return () => {
+            stopListening();
+            clearTimeout(toastTimer);
+        };
     });
 
     // --- Notifikasi order online baru: suara + badge ---
