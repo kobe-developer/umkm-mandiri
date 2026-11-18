@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { Link, router } from '@inertiajs/svelte';
     import ChevronRight from '@lucide/svelte/icons/chevron-right';
     import ReceiptText from '@lucide/svelte/icons/receipt-text';
@@ -10,7 +11,7 @@
     import { rupiah, time, date } from '../../lib/format.js';
 
     /** "Pesanan saya": order yang sedang berjalan (realtime) + riwayat pembelian di perangkat ini. */
-    let { orders = [], storeName } = $props();
+    let { orders = [] } = $props();
 
     const ITEMS_PREVIEW = 3;
     const TZ = 'Asia/Jakarta';
@@ -49,7 +50,7 @@
     }
 </script>
 
-<svelte:head><title>Pesanan saya · {storeName}</title></svelte:head>
+<PageTitle title="Pesanan saya" />
 
 <div class="min-h-dvh bg-paper pb-12">
     <FlowHeader title="Pesanan saya" backLabel="Kembali ke menu" onback={() => router.visit('/menu')} />

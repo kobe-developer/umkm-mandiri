@@ -22,7 +22,7 @@
                 <div class="flex items-center gap-3">
                     <div class="min-w-0 flex-1">
                         <p class="truncate text-sm font-semibold text-ink">{item.name}</p>
-                        <p class="num text-xs text-muted">{rupiah(item.price)} <span class="text-faint">·</span> <span class="text-ink-soft">{rupiah(item.price * item.quantity)}</span></p>
+                        <p class="num text-xs text-muted">{#if item.normal_price > item.price}<span class="mr-1 text-faint line-through">{rupiah(item.normal_price)}</span><span class="font-semibold text-brand-700">{rupiah(item.price)}</span>{:else}{rupiah(item.price)}{/if} <span class="text-faint">·</span> <span class="text-ink-soft">{rupiah(item.price * item.quantity)}</span></p>
                     </div>
                     <QtyStepper size="sm" value={item.quantity} max={maxFor(item)} onchange={(q) => onqty(item.product_id, q)} />
                 </div>

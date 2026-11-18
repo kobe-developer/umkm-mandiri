@@ -8,7 +8,7 @@ use Illuminate\Validation\Rule;
 
 class CheckoutRequest extends FormRequest
 {
-    use ValidatesOrderItems;
+    use ValidatesOrderItems, ValidatesPushSubscription;
 
     protected function prepareForValidation(): void
     {
@@ -27,6 +27,9 @@ class CheckoutRequest extends FormRequest
             'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
             'notes' => ['nullable', 'string', 'max:255'],
             'consent' => ['accepted'],
+            // Opsional: langganan web push untuk kabar status pesanan
+            'push_subscription' => ['nullable', 'array'],
+            ...$this->pushSubscriptionRules('push_subscription.', required: false),
         ];
     }
 

@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { onMount } from 'svelte';
     import { page, router } from '@inertiajs/svelte';
     import StatusTimeline from '../../components/menu/StatusTimeline.svelte';
@@ -53,7 +54,7 @@
     });
 </script>
 
-<svelte:head><title>Pesanan {order.order_number}</title></svelte:head>
+<PageTitle title={`Pesanan ${order.order_number}`} />
 
 {#snippet row(label, value)}
     <div class="flex justify-between gap-4 py-2.5">

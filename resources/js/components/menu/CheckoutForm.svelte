@@ -1,5 +1,7 @@
 <script>
-    import { useForm } from '@inertiajs/svelte';
+    import { useForm, page } from '@inertiajs/svelte';
+    import { onMount } from 'svelte';
+    import BellRing from '@lucide/svelte/icons/bell-ring';
     import ShoppingBag from '@lucide/svelte/icons/shopping-bag';
     import Bike from '@lucide/svelte/icons/bike';
     import Banknote from '@lucide/svelte/icons/banknote';
@@ -13,6 +15,7 @@
     import FlowHeader from './FlowHeader.svelte';
     import { rupiah, normalizePhone } from '../../lib/format.js';
     import { cart } from '../../lib/cart.svelte.js';
+    import { pushSupport, subscribePush } from '../../lib/push.js';
 
     /** Form checkout tanpa login: nama, WA, pengambilan, alamat, rencana bayar, catatan. */
     let { productMap, settings, paymentMethods, blockedReason = null, onback } = $props();
@@ -42,6 +45,17 @@
         };
     });
 
+    // Notifikasi status pesanan (web push), opsional
+    const vapidKey = $derived(page.props.config?.vapidPublicKey);
+    let pushState = $state('unsupported');
+    let wantsPush = $state(false);
+    let preparingPush = $state(false);
+    onMount(() => {
+        pushState = pushSupport(vapidKey);
+        wantsPush = pushState === 'granted';
+    });
+    const canOfferPush = $derived(pushState === 'ready' || pushState === 'granted');
+
     const subtotal = $derived(cart.subtotal(productMap));
     const itemCount = $derived(cart.count());
     const normalizedPhone = $derived(normalizePhone(form.whatsapp_number));
@@ -60,15 +74,31 @@
         }
     }
 
-    function submit(event) {
+    /** Izin notifikasi diminta di dalam gestur submit; gagal/ditolak → pesanan tetap dikirim tanpa notifikasi. */
+    async function preparePush() {
+        if (!wantsPush || !canOfferPush) return null;
+        preparingPush = true;
+        try {
+            return await subscribePush(vapidKey);
+        } catch {
+            return null;
+        } finally {
+            preparingPush = false;
+            pushState = pushSupport(vapidKey);
+        }
+    }
+
+    async function submit(event) {
         event.preventDefault();
-        if (blockedReason) return;
+        if (blockedReason || form.processing || preparingPush) return;
         remember();
+        const pushSubscription = await preparePush();
         form
             .transform((data) => ({
                 ...data,
                 address: data.fulfillment === 'delivery' ? data.address : null,
                 items: cart.payload(),
+                push_subscription: pushSubscription,
             }))
             .post('/menu/checkout', {
                 preserveScroll: true,
@@ -188,6 +218,21 @@
             <span>Saya setuju nomor WA dipakai untuk konfirmasi pesanan dan pengiriman struk.</span>
         </label>
         {#if form.errors.consent}<p class="error">{form.errors.consent}</p>{/if}
+
+        {#if canOfferPush}
+            <label class="flex cursor-pointer items-start gap-3 rounded-2xl bg-surface p-4 text-sm text-ink-soft ring-1 ring-line">
+                <input type="checkbox" class="checkbox mt-px" bind:checked={wantsPush} />
+                <span>
+                    <span class="flex items-center gap-1.5 font-semibold text-ink"><BellRing size={15} class="text-brand-600" aria-hidden="true" />Kabari saya lewat notifikasi</span>
+                    <span class="mt-0.5 block text-xs text-muted">Dapat notifikasi di perangkat ini saat pesanan dikonfirmasi, diproses, siap/diantar, selesai, dan saat pembayaran diterima.</span>
+                </span>
+            </label>
+        {:else if pushState === 'needs-install'}
+            <p class="flex items-start gap-2 rounded-2xl bg-paper-deep/60 p-4 text-xs text-muted">
+                <BellRing size={15} class="mt-px shrink-0" aria-hidden="true" />
+                <span>Ingin notifikasi status pesanan di iPhone? Ketuk Bagikan → "Tambahkan ke Layar Utama", lalu pesan dari aplikasi di layar utama.</span>
+            </p>
+        {/if}
     </section>
 
     <div class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 px-4 pt-3 backdrop-blur-xl">
@@ -199,8 +244,8 @@
             {#if blockedReason}
                 <p class="mb-2 text-center text-sm font-semibold text-brand-600">{blockedReason}</p>
             {/if}
-            <button type="submit" class="btn-accent min-h-13 w-full text-base" disabled={form.processing || !!blockedReason || itemCount === 0 || !form.consent}>
-                {#if form.processing}Mengirim pesanan…{:else}<Send size={18} />Kirim pesanan{/if}
+            <button type="submit" class="btn-accent min-h-13 w-full text-base" disabled={form.processing || preparingPush || !!blockedReason || itemCount === 0 || !form.consent}>
+                {#if preparingPush}Menyiapkan notifikasi…{:else if form.processing}Mengirim pesanan…{:else}<Send size={18} />Kirim pesanan{/if}
             </button>
             {#if !form.consent && !form.processing}
                 <p class="mt-2 text-center text-xs text-muted">Centang persetujuan WA untuk mengirim pesanan.</p>

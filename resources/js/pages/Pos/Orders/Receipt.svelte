@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../../components/PageTitle.svelte';
     import { Link } from '@inertiajs/svelte';
     import ChevronLeft from '@lucide/svelte/icons/chevron-left';
     import Printer from '@lucide/svelte/icons/printer';
@@ -8,7 +9,7 @@
     let { order, store } = $props();
 </script>
 
-<svelte:head><title>Struk {order.order_number}</title></svelte:head>
+<PageTitle title={`Struk ${order.order_number}`} />
 
 <div class="min-h-dvh bg-paper-deep py-6 print:bg-white print:py-0">
     <div class="no-print mx-auto mb-5 flex max-w-[80mm] gap-2 px-2">
@@ -34,7 +35,7 @@
         {#each order.items as item (item.id)}
             <div class="mb-1">
                 <p>{item.product_name}</p>
-                <div class="flex justify-between"><span>{item.quantity} x {rupiah(item.unit_price)}</span><span>{rupiah(item.subtotal)}</span></div>
+                <div class="flex justify-between"><span>{item.quantity} x {rupiah(item.unit_price)}{#if item.is_promo} (promo){/if}</span><span>{rupiah(item.subtotal)}</span></div>
                 {#if item.notes}<p class="text-[11px]">  * {item.notes}</p>{/if}
             </div>
         {/each}

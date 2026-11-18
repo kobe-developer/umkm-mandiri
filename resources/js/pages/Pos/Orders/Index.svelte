@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../../components/PageTitle.svelte';
     import { Link, router } from '@inertiajs/svelte';
     import PageHeader from '../../../components/PageHeader.svelte';
     import StatusBadge from '../../../components/StatusBadge.svelte';
@@ -29,7 +30,7 @@
     }
 </script>
 
-<svelte:head><title>Transaksi</title></svelte:head>
+<PageTitle title="Transaksi" />
 
 <PageHeader title="Transaksi" subtitle="Riwayat order & daftar belum dibayar.">
     {#snippet actions()}

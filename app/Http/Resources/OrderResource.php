@@ -46,6 +46,8 @@ class OrderResource extends JsonResource
                 'product_id' => $item->product_id,
                 'product_name' => $item->product_name,
                 'unit_price' => $item->unit_price,
+                'original_price' => $item->original_price,
+                'is_promo' => $item->promotion_id !== null || $item->promoSaving() > 0,
                 'quantity' => $item->quantity,
                 'notes' => $item->notes,
                 'subtotal' => $item->subtotal,

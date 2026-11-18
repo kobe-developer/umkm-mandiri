@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { page, useForm } from '@inertiajs/svelte';
     import Plus from '@lucide/svelte/icons/plus';
     import Pencil from '@lucide/svelte/icons/pencil';
@@ -45,7 +46,7 @@
     }
 </script>
 
-<svelte:head><title>Metode Pembayaran</title></svelte:head>
+<PageTitle title="Metode Pembayaran" />
 
 <PageHeader title="Metode Pembayaran" subtitle="Atur metode aktif per kanal (dine in, take away, online)">
     {#snippet actions()}

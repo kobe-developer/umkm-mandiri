@@ -3,12 +3,19 @@
     import ChevronDown from '@lucide/svelte/icons/chevron-down';
     import CashInput from './CashInput.svelte';
     import MoneyInput from '../MoneyInput.svelte';
+    import SearchSelect from '../SearchSelect.svelte';
     import { rupiah } from '../../lib/format.js';
 
     /** Bagian bawah tiket: pelanggan, diskon, pembayaran, total & tombol simpan. */
     let { form, methods, subtotal, discount, total, canDiscount, itemCount, onsubmit } = $props();
 
     let showCustomer = $state(false);
+
+    const DISCOUNT_OPTIONS = [
+        { value: '', label: 'Tanpa diskon' },
+        { value: 'nominal', label: 'Diskon Rp' },
+        { value: 'percent', label: 'Diskon %' },
+    ];
 
     const selectedMethod = $derived(methods.find((m) => m.id === form.payment_method_id));
     const isCash = $derived(selectedMethod?.type === 'tunai');
@@ -34,11 +41,7 @@
 
     {#if canDiscount}
         <div class="flex items-center gap-2">
-            <select class="input w-[10.5rem] shrink-0" bind:value={form.discount_type} aria-label="Jenis diskon">
-                <option value="">Tanpa diskon</option>
-                <option value="nominal">Diskon Rp</option>
-                <option value="percent">Diskon %</option>
-            </select>
+            <SearchSelect class="w-[10.5rem] shrink-0" options={DISCOUNT_OPTIONS} bind:value={form.discount_type} ariaLabel="Jenis diskon" />
             {#if form.discount_type === 'nominal'}
                 <div class="flex-1"><MoneyInput bind:value={form.discount_value} aria-label="Nilai diskon" /></div>
             {:else if form.discount_type === 'percent'}

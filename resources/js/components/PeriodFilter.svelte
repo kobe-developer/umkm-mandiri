@@ -1,6 +1,7 @@
 <script>
     import { router } from '@inertiajs/svelte';
     import { untrack } from 'svelte';
+    import DatePicker from './DatePicker.svelte';
 
     /** Filter periode: hari ini, 7 hari, 30 hari, bulan ini, rentang custom. */
     let { period, url, extra = {}, presets = ['today', '7d', '30d', 'month', 'custom'] } = $props();
@@ -41,9 +42,9 @@
     </div>
     {#if showCustom}
         <form class="flex flex-wrap items-center gap-2" onsubmit={applyCustom}>
-            <input type="date" class="input w-auto" bind:value={from} max={to} required aria-label="Dari tanggal" />
+            <DatePicker class="w-44" bind:value={from} max={to} ariaLabel="Dari tanggal" />
             <span class="text-faint">–</span>
-            <input type="date" class="input w-auto" bind:value={to} min={from} required aria-label="Sampai tanggal" />
+            <DatePicker class="w-44" bind:value={to} min={from} ariaLabel="Sampai tanggal" />
             <button class="btn-primary" type="submit">Terapkan</button>
         </form>
     {/if}

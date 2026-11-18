@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { page, useForm } from '@inertiajs/svelte';
     import Plus from '@lucide/svelte/icons/plus';
     import Pencil from '@lucide/svelte/icons/pencil';
@@ -56,7 +57,7 @@
     }
 </script>
 
-<svelte:head><title>Kategori</title></svelte:head>
+<PageTitle title="Kategori" />
 
 <PageHeader title="Kategori" subtitle="Urutan tampil di kasir & menu online">
     {#snippet actions()}

@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../../components/PageTitle.svelte';
     import { Link, router, useForm } from '@inertiajs/svelte';
     import { untrack } from 'svelte';
     import Plus from '@lucide/svelte/icons/plus';
@@ -46,7 +47,7 @@
     }
 </script>
 
-<svelte:head><title>Produk</title></svelte:head>
+<PageTitle title="Produk" />
 
 <PageHeader title="Produk" subtitle="{products.length} produk">
     {#snippet actions()}

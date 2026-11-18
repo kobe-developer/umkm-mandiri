@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { useForm, page } from '@inertiajs/svelte';
     import ProductGrid from '../../components/pos/ProductGrid.svelte';
     import TicketItems from '../../components/pos/TicketItems.svelte';
@@ -8,6 +9,7 @@
     import ChevronUp from '@lucide/svelte/icons/chevron-up';
     import X from '@lucide/svelte/icons/x';
     import { rupiah } from '../../lib/format.js';
+    import { effectivePrice } from '../../lib/promo.js';
 
     let { categories, products, paymentMethods, channels } = $props();
 
@@ -29,11 +31,17 @@
         amount_received: null,
     });
 
+    const productById = $derived(Object.fromEntries(products.map((p) => [p.id, p])));
     const canDiscount = $derived(page.props.pos?.can_discount ?? false);
     const methods = $derived(paymentMethods.filter((m) => (m.channels ?? []).includes(form.channel)));
     const quantities = $derived(Object.fromEntries(cart.map((i) => [i.product_id, i.quantity])));
     const itemCount = $derived(cart.reduce((sum, i) => sum + i.quantity, 0));
-    const subtotal = $derived(cart.reduce((sum, i) => sum + i.price * i.quantity, 0));
+    // Harga mengikuti kanal terpilih (promo bisa hanya berlaku untuk dine in / take away)
+    const ticketItems = $derived(cart.map((i) => {
+        const product = productById[i.product_id];
+        return { ...i, price: effectivePrice(product, form.channel), normal_price: product?.price ?? i.price };
+    }));
+    const subtotal = $derived(ticketItems.reduce((sum, i) => sum + i.price * i.quantity, 0));
     const discount = $derived.by(() => {
         const value = Number(form.discount_value) || 0;
         if (!canDiscount || !form.discount_type) return 0;
@@ -41,7 +49,6 @@
         return Math.min(value, subtotal);
     });
     const total = $derived(subtotal - discount);
-    const productById = $derived(Object.fromEntries(products.map((p) => [p.id, p])));
 
     // Metode yang tidak berlaku untuk kanal terpilih di-reset; default ke metode pertama (biasanya Tunai)
     $effect(() => {
@@ -65,7 +72,7 @@
             setQty(product.id, Math.min(existing.quantity + 1, maxFor(existing)));
             return;
         }
-        cart = [...cart, { product_id: product.id, name: product.name, price: product.price, quantity: 1, notes: '' }];
+        cart = [...cart, { product_id: product.id, name: product.name, quantity: 1, notes: '' }];
     }
 
     function setQty(productId, quantity) {
@@ -98,7 +105,7 @@
     }
 </script>
 
-<svelte:head><title>Kasir</title></svelte:head>
+<PageTitle title="Kasir" />
 
 {#snippet ticket(closeable = false)}
     <div class="space-y-3">
@@ -108,7 +115,7 @@
             {#if closeable}<button type="button" class="btn-icon -mr-2 size-10" aria-label="Tutup pesanan" onclick={() => (ticketOpen = false)}><X size={20} /></button>{/if}
         </div>
         <ErrorSummary errors={form.errors} />
-        <TicketItems {cart} {maxFor} onqty={setQty} onnotes={setNotes} />
+        <TicketItems cart={ticketItems} {maxFor} onqty={setQty} onnotes={setNotes} />
         <TicketCheckout {form} {methods} {subtotal} {discount} {total} {canDiscount} {itemCount} onsubmit={submit} />
     </div>
 {/snippet}
@@ -132,7 +139,7 @@
             {/if}
         </div>
 
-        <ProductGrid {categories} {products} {quantities} onadd={add} />
+        <ProductGrid {categories} {products} {quantities} channel={form.channel} onadd={add} />
     </section>
 
     <!-- Tiket desktop/tablet besar -->

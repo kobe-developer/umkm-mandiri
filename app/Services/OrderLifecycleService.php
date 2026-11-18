@@ -21,6 +21,7 @@ class OrderLifecycleService
         private readonly OrderPricer $pricer,
         private readonly OwnerPinVerifier $pinVerifier,
         private readonly ActivityLogger $logger,
+        private readonly OrderPushNotifier $push,
     ) {}
 
     /** Tandai lunas. Stok berkurang saat order Lunas. */
@@ -162,17 +163,20 @@ class OrderLifecycleService
         $order->fill(['status' => $status, ...$timestamps])->save();
     }
 
-    /** Jalankan perubahan dengan baris order terkunci, lalu broadcast. */
+    /** Jalankan perubahan dengan baris order terkunci, lalu broadcast + web push ke pelanggan. */
     private function transact(Order $order, callable $callback): Order
     {
-        $fresh = DB::transaction(function () use ($order, $callback) {
+        $before = null;
+        $fresh = DB::transaction(function () use ($order, $callback, &$before) {
             $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            $before = [$locked->status, $locked->payment_status];
             $callback($locked);
 
             return $locked;
         });
 
         rescue(fn () => OrderUpdated::dispatch($fresh));
+        rescue(fn () => $this->push->orderChanged($fresh, ...$before));
 
         return $fresh->fresh(['items', 'paymentMethod']);
     }

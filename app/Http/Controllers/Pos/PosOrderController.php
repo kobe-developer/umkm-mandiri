@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Services\OrderCreationService;
+use App\Services\PromotionCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -19,22 +20,26 @@ class PosOrderController extends Controller
 {
     use RequiresOpenShift;
 
-    public function create(Request $request): Response|RedirectResponse
+    public function create(Request $request, PromotionCatalog $catalog): Response|RedirectResponse
     {
         if (! $request->user()->openShift) {
             return redirect()->route('pos.shift.show')->with('error', 'Buka shift terlebih dahulu.');
         }
 
         $methods = PaymentMethod::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+        $products = Product::active()->orderBy('sort_order')->orderBy('name')->get();
+        $promotions = $catalog->activeFor($products->modelKeys());
 
         return Inertia::render('Pos/Cashier', [
             'categories' => Category::where('is_active', true)->ordered()->get(['id', 'name']),
-            'products' => Product::active()->orderBy('sort_order')->orderBy('name')->get()
+            // Harga promo per kanal dipilih di browser hanya untuk tampilan; server menghitung ulang.
+            'products' => $products
                 ->map(fn (Product $p) => [
                     'id' => $p->id,
                     'category_id' => $p->category_id,
                     'name' => $p->name,
                     'price' => $p->price,
+                    'promo' => $catalog->present($p, $promotions->get($p->id)),
                     'photo_url' => $p->photo_url,
                     'is_sold_out' => $p->is_sold_out,
                     'track_stock' => $p->track_stock,

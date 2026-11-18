@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { Link, router } from '@inertiajs/svelte';
     import Download from '@lucide/svelte/icons/download';
     import Search from '@lucide/svelte/icons/search';
@@ -8,6 +9,7 @@
     import StatusBadge from '../../components/StatusBadge.svelte';
     import Pagination from '../../components/Pagination.svelte';
     import EmptyState from '../../components/EmptyState.svelte';
+    import SearchSelect from '../../components/SearchSelect.svelte';
     import { rupiah, dateTime } from '../../lib/format.js';
 
     let { orders, period, filters = {}, options } = $props();
@@ -19,6 +21,15 @@
     const periodParams = $derived(
         period.preset === 'custom' ? { period: 'custom', from: period.from, to: period.to } : { period: period.preset },
     );
+    /** Opsi filter dengan pilihan "Semua …" (nilai kosong) di paling atas. */
+    const withAll = (label, list) => [{ value: '', label }, ...list];
+    const selectOptions = $derived({
+        channels: withAll('Semua kanal', options.channels),
+        statuses: withAll('Semua status', options.statuses),
+        paymentStatuses: withAll('Semua pembayaran', options.paymentStatuses),
+        paymentMethods: withAll('Semua metode', options.paymentMethods.map((m) => ({ value: String(m.id), label: m.name }))),
+        cashiers: withAll('Semua kasir', options.cashiers.map((c) => ({ value: String(c.id), label: c.name }))),
+    });
     const activeFilters = $derived(Object.fromEntries(Object.entries(values).filter(([, v]) => v !== '' && v !== null)));
     const exportQuery = $derived(new URLSearchParams({ ...periodParams, ...activeFilters }).toString());
 
@@ -33,7 +44,7 @@
     }
 </script>
 
-<svelte:head><title>Semua Transaksi</title></svelte:head>
+<PageTitle title="Semua Transaksi" />
 
 <PageHeader title="Semua Transaksi" subtitle="Dine in, take away & online dalam satu daftar">
     {#snippet actions()}
@@ -49,26 +60,11 @@
         <Search size={17} class="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-faint" aria-hidden="true" />
         <input class="input pl-10" type="search" placeholder="Cari no. order / nama / WA" bind:value={values.search} aria-label="Cari" />
     </div>
-    <select class="input" bind:value={values.channel} aria-label="Kanal">
-        <option value="">Semua kanal</option>
-        {#each options.channels as option (option.value)}<option value={option.value}>{option.label}</option>{/each}
-    </select>
-    <select class="input" bind:value={values.status} aria-label="Status">
-        <option value="">Semua status</option>
-        {#each options.statuses as option (option.value)}<option value={option.value}>{option.label}</option>{/each}
-    </select>
-    <select class="input" bind:value={values.payment_status} aria-label="Status bayar">
-        <option value="">Semua pembayaran</option>
-        {#each options.paymentStatuses as option (option.value)}<option value={option.value}>{option.label}</option>{/each}
-    </select>
-    <select class="input" bind:value={values.payment_method_id} aria-label="Metode bayar">
-        <option value="">Semua metode</option>
-        {#each options.paymentMethods as option (option.id)}<option value={String(option.id)}>{option.name}</option>{/each}
-    </select>
-    <select class="input col-span-2 sm:col-span-1" bind:value={values.cashier_id} aria-label="Kasir">
-        <option value="">Semua kasir</option>
-        {#each options.cashiers as option (option.id)}<option value={String(option.id)}>{option.name}</option>{/each}
-    </select>
+    <SearchSelect options={selectOptions.channels} bind:value={values.channel} ariaLabel="Kanal" />
+    <SearchSelect options={selectOptions.statuses} bind:value={values.status} ariaLabel="Status" />
+    <SearchSelect options={selectOptions.paymentStatuses} bind:value={values.payment_status} ariaLabel="Status bayar" />
+    <SearchSelect options={selectOptions.paymentMethods} bind:value={values.payment_method_id} ariaLabel="Metode bayar" searchPlaceholder="Cari metode…" />
+    <SearchSelect class="col-span-2 sm:col-span-1" options={selectOptions.cashiers} bind:value={values.cashier_id} ariaLabel="Kasir" searchPlaceholder="Cari kasir…" />
     <div class="col-span-2 flex gap-2 pt-1 sm:col-span-3 sm:justify-end lg:col-span-5 [&>*]:flex-1 sm:[&>*]:flex-none">
         <button type="button" class="btn-ghost" onclick={reset}>Reset</button>
         <button type="submit" class="btn-primary">Terapkan</button>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\PushSubscriptionService;
 use App\Services\StoreStatusService;
 use Illuminate\Support\Facades\Schedule;
 
@@ -13,3 +14,8 @@ Schedule::call(fn (StoreStatusService $status) => $status->syncWithSchedule(now(
 Schedule::command('app:backup-database')->dailyAt('03:00')->withoutOverlapping();
 
 Schedule::command('queue:prune-failed --hours=168')->daily();
+
+// Langganan web push pelanggan untuk order yang sudah final tidak diperlukan lagi
+Schedule::call(fn (PushSubscriptionService $push) => $push->pruneFinishedOrders())
+    ->name('push:prune-order-subscriptions')
+    ->dailyAt('03:30');

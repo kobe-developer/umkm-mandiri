@@ -10,7 +10,12 @@
         <li class="flex items-start justify-between gap-3 py-3">
             <div class="min-w-0">
                 <p class="font-medium text-ink">{item.product_name}</p>
-                <p class="num text-xs text-muted">{item.quantity} × {rupiah(item.unit_price)}</p>
+                <p class="num text-xs text-muted">
+                    {item.quantity} ×
+                    {#if item.is_promo && item.original_price > item.unit_price}<span class="text-faint line-through">{rupiah(item.original_price)}</span>{/if}
+                    {rupiah(item.unit_price)}
+                    {#if item.is_promo}<span class="ml-1 rounded-full bg-brand-50 px-1.5 py-px text-[10px] font-semibold text-brand-700">Promo</span>{/if}
+                </p>
                 {#if item.notes}<p class="mt-0.5 text-xs text-amber-ink italic">“{item.notes}”</p>{/if}
             </div>
             <p class="num font-semibold text-ink">{rupiah(item.subtotal)}</p>

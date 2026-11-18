@@ -1,0 +1,197 @@
+<script>
+    import { tick } from 'svelte';
+    import ChevronDown from '@lucide/svelte/icons/chevron-down';
+    import Search from '@lucide/svelte/icons/search';
+    import Check from '@lucide/svelte/icons/check';
+    import { clickOutside, anchorStyle, onViewportChange } from '../lib/popover.js';
+
+    /**
+     * Pilihan dengan pencarian (ala select2), pengganti <select>.
+     * options: [{ value, label, hint? }] — hint tampil di kanan (mis. harga).
+     * searchable: 'auto' = kolom cari hanya muncul bila opsi lebih dari SEARCH_THRESHOLD.
+     */
+    let {
+        options = [],
+        value = $bindable(null),
+        id = undefined,
+        ariaLabel = undefined,
+        placeholder = 'Pilih…',
+        searchPlaceholder = 'Cari…',
+        emptyText = 'Tidak ada hasil',
+        searchable = 'auto',
+        invalid = false,
+        class: className = '',
+        onchange,
+    } = $props();
+
+    /** Batas baris yang dirender sekaligus agar tetap ringan untuk daftar panjang. */
+    const MAX_VISIBLE = 100;
+    const SEARCH_THRESHOLD = 7;
+    const PANEL_HEIGHT = 320;
+    const uid = `ss-${Math.random().toString(36).slice(2, 9)}`;
+
+    let open = $state(false);
+    let query = $state('');
+    let activeIndex = $state(0);
+    let panelStyle = $state('');
+    let trigger = $state();
+    let searchInput = $state();
+    let listbox = $state();
+
+    const showSearch = $derived(searchable === 'auto' ? options.length > SEARCH_THRESHOLD : Boolean(searchable));
+    const selected = $derived(options.find((option) => option.value === value) ?? null);
+    const triggerLabel = $derived(ariaLabel ? `${ariaLabel}: ${selected?.label ?? placeholder}` : undefined);
+    const matches = $derived.by(() => {
+        const term = showSearch ? query.trim().toLowerCase() : '';
+        const found = term ? options.filter((option) => option.label.toLowerCase().includes(term)) : options;
+        return found.slice(0, MAX_VISIBLE);
+    });
+    const activeId = $derived(matches[activeIndex] ? `${uid}-opt-${activeIndex}` : undefined);
+
+    async function openPanel() {
+        if (open) return;
+        query = '';
+        panelStyle = anchorStyle(trigger, { height: PANEL_HEIGHT });
+        open = true;
+        activeIndex = Math.max(0, options.findIndex((option) => option.value === value));
+        await tick();
+        (showSearch ? searchInput : listbox)?.focus();
+        scrollActiveIntoView();
+    }
+
+    // Panel fixed mengikuti trigger saat isi modal/halaman di-scroll
+    $effect(() => {
+        if (!open) return;
+        return onViewportChange(() => (panelStyle = anchorStyle(trigger, { height: PANEL_HEIGHT })));
+    });
+
+    function close(restoreFocus = false) {
+        open = false;
+        if (restoreFocus) trigger?.focus();
+    }
+
+    function choose(option) {
+        value = option.value;
+        onchange?.(option.value);
+        close(true);
+    }
+
+    async function scrollActiveIntoView() {
+        await tick();
+        listbox?.querySelector(`#${uid}-opt-${activeIndex}`)?.scrollIntoView({ block: 'nearest' });
+    }
+
+    function move(delta) {
+        if (matches.length === 0) return;
+        activeIndex = (activeIndex + delta + matches.length) % matches.length;
+        scrollActiveIntoView();
+    }
+
+    function jump(index) {
+        activeIndex = index;
+        scrollActiveIntoView();
+    }
+
+    /** Navigasi keyboard: dipasang di kolom cari, atau di listbox bila tanpa kolom cari. */
+    function onListKeydown(event) {
+        const chooseActive = () => matches[activeIndex] && choose(matches[activeIndex]);
+        const actions = {
+            ArrowDown: () => move(1),
+            ArrowUp: () => move(-1),
+            Home: () => jump(0),
+            End: () => jump(Math.max(0, matches.length - 1)),
+            Enter: chooseActive,
+            Escape: () => close(true),
+            // Spasi memilih hanya bila tidak ada kolom cari (di kolom cari spasi adalah teks)
+            ...(showSearch ? {} : { ' ': chooseActive }),
+        };
+        const action = actions[event.key];
+        if (!action) return;
+        event.preventDefault();
+        event.stopPropagation(); // Escape tidak ikut menutup modal
+        action();
+    }
+
+    function onTriggerKeydown(event) {
+        if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
+            event.preventDefault();
+            openPanel();
+        }
+    }
+</script>
+
+<div class="relative {className}" use:clickOutside={() => close()} onfocusout={(e) => open && !e.currentTarget.contains(e.relatedTarget) && close()}>
+    <button
+        bind:this={trigger}
+        {id}
+        type="button"
+        class="input flex items-center gap-2 text-left {invalid ? 'border-brand-500' : ''} {open ? 'ring-4 ring-ink/5' : ''}"
+        aria-label={triggerLabel}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls="{uid}-list"
+        onclick={() => (open ? close() : openPanel())}
+        onkeydown={onTriggerKeydown}
+    >
+        <span class="min-w-0 flex-1 truncate {selected ? 'text-ink' : 'text-faint'}">{selected?.label ?? placeholder}</span>
+        {#if selected?.hint}<span class="num shrink-0 text-xs text-muted">{selected.hint}</span>{/if}
+        <ChevronDown size={16} class="shrink-0 text-muted transition-transform {open ? 'rotate-180' : ''}" aria-hidden="true" />
+    </button>
+
+    {#if open}
+        <div class="fixed z-[70] flex animate-fade-in flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-float" style={panelStyle}>
+            {#if showSearch}
+                <div class="relative border-b border-line p-2">
+                    <Search size={16} class="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-faint" aria-hidden="true" />
+                    <input
+                        bind:this={searchInput}
+                        bind:value={query}
+                        type="text"
+                        class="input min-h-10 rounded-xl pl-9 text-sm"
+                        role="combobox"
+                        aria-label={searchPlaceholder}
+                        aria-autocomplete="list"
+                        aria-expanded="true"
+                        aria-controls="{uid}-list"
+                        aria-activedescendant={activeId}
+                        placeholder={searchPlaceholder}
+                        autocomplete="off"
+                        onkeydown={onListKeydown}
+                        oninput={() => (activeIndex = 0)}
+                    />
+                </div>
+            {/if}
+            <ul
+                bind:this={listbox}
+                id="{uid}-list"
+                role="listbox"
+                tabindex="-1"
+                aria-label={ariaLabel}
+                aria-activedescendant={showSearch ? undefined : activeId}
+                class="max-h-64 min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5 focus:outline-none"
+                onkeydown={showSearch ? undefined : onListKeydown}
+            >
+                {#each matches as option, index (option.value)}
+                    {@const isSelected = option.value === value}
+                    <!-- Keyboard ditangani kolom cari / listbox (pola aria-activedescendant) -->
+                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                    <li
+                        id="{uid}-opt-{index}"
+                        role="option"
+                        aria-selected={isSelected}
+                        class="flex min-h-10 cursor-pointer items-center gap-2 rounded-xl px-3 text-sm transition-colors {index === activeIndex ? 'bg-paper-deep' : ''} {isSelected ? 'font-semibold text-ink' : 'text-ink-soft'}"
+                        onpointerenter={() => (activeIndex = index)}
+                        onpointerdown={(e) => e.preventDefault()}
+                        onclick={() => choose(option)}
+                    >
+                        <span class="min-w-0 flex-1 truncate">{option.label}</span>
+                        {#if option.hint}<span class="num shrink-0 text-xs text-muted">{option.hint}</span>{/if}
+                        <Check size={15} class="shrink-0 text-brand-600 {isSelected ? '' : 'invisible'}" aria-hidden="true" />
+                    </li>
+                {:else}
+                    <li class="px-3 py-6 text-center text-sm text-muted" role="presentation">{emptyText}</li>
+                {/each}
+            </ul>
+        </div>
+    {/if}
+</div>
