@@ -176,7 +176,7 @@
     <!-- Sidebar desktop -->
     <aside class="no-print fixed inset-y-0 left-0 hidden w-68 flex-col border-r border-line bg-paper lg:flex">
         <div class="flex items-center gap-3 px-5 pt-6 pb-5">
-            <Logo name={store?.name} size={40} />
+            <Logo size={40} />
             <div class="min-w-0">
                 <p class="display truncate text-[17px] leading-tight text-ink">{store?.name}</p>
                 {@render storeStatus()}
@@ -200,7 +200,7 @@
     <!-- Top bar mobile -->
     <header class="no-print sticky top-0 z-30 flex items-center gap-3 border-b border-line/70 bg-paper/85 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:hidden">
         <div class="flex min-h-14 flex-1 items-center gap-2.5">
-            <Logo name={store?.name} size={30} />
+            <Logo size={30} />
             <p class="display min-w-0 flex-1 truncate text-[17px] text-ink">{store?.name}</p>
             {@render storeStatus()}
         </div>

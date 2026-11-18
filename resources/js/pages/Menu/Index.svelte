@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { onMount, tick } from 'svelte';
     import MenuHeader from '../../components/menu/MenuHeader.svelte';
     import ProductCard from '../../components/menu/ProductCard.svelte';
@@ -106,8 +107,8 @@
     }
 </script>
 
+<PageTitle title="Menu" />
 <svelte:head>
-    <title>Menu · {storeSettings.name}</title>
     <meta name="description" content="Pesan online {storeSettings.name}. {storeSettings.delivery_note ?? ''}" />
 </svelte:head>
 

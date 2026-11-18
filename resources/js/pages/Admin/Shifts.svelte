@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import Clock from '@lucide/svelte/icons/clock';
     import PageHeader from '../../components/PageHeader.svelte';
     import PeriodFilter from '../../components/PeriodFilter.svelte';
@@ -19,7 +20,7 @@
     }
 </script>
 
-<svelte:head><title>Laporan Shift</title></svelte:head>
+<PageTitle title="Laporan Shift" />
 
 <PageHeader title="Laporan Shift" subtitle="Kas awal, penjualan tunai & non-tunai, dan selisih kas saat tutup shift" />
 

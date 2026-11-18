@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../components/PageTitle.svelte';
     let { status } = $props();
 
     const MESSAGES = {
@@ -13,7 +14,7 @@
     const message = $derived(MESSAGES[status] ?? MESSAGES[500]);
 </script>
 
-<svelte:head><title>{message[0]}</title></svelte:head>
+<PageTitle title={message[0]} />
 
 <div class="flex min-h-dvh flex-col items-center justify-center bg-paper px-6 text-center">
     <p class="display text-[5.5rem] leading-none text-brand-600">{status}</p>

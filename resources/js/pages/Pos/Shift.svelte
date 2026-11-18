@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { useForm } from '@inertiajs/svelte';
     import PageHeader from '../../components/PageHeader.svelte';
     import MoneyInput from '../../components/MoneyInput.svelte';
@@ -29,7 +30,7 @@
     }
 </script>
 
-<svelte:head><title>Shift</title></svelte:head>
+<PageTitle title="Shift" />
 
 {#snippet line(label, value, emphasis = '')}
     <div class="flex justify-between gap-3 py-2.5 {emphasis}"><dt>{label}</dt><dd class="num">{value}</dd></div>

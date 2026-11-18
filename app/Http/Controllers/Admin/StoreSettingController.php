@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSettingRequest;
 use App\Models\StoreSetting;
 use App\Services\ActivityLogger;
+use App\Services\BrandIconService;
 use App\Services\StoreStatusService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ use Inertia\Response;
 
 class StoreSettingController extends Controller
 {
-    public function edit(StoreStatusService $status): Response
+    public function edit(StoreStatusService $status, BrandIconService $icons): Response
     {
         $settings = StoreSetting::current();
 
@@ -23,6 +24,7 @@ class StoreSettingController extends Controller
             'days' => StoreSetting::DAYS,
             'withinHours' => $status->isWithinOperatingHours($settings, now()),
             'menuUrl' => route('menu.index'),
+            'brandIcons' => $icons->urls($settings),
         ]);
     }
 

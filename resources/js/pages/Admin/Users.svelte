@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { Link, page, useForm } from '@inertiajs/svelte';
     import Plus from '@lucide/svelte/icons/plus';
     import Pencil from '@lucide/svelte/icons/pencil';
@@ -57,7 +58,7 @@
     }
 </script>
 
-<svelte:head><title>User</title></svelte:head>
+<PageTitle title="User" />
 
 <PageHeader title="User" subtitle="Akun Owner & Kasir">
     {#snippet actions()}

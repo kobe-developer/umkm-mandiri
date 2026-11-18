@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { router, useForm } from '@inertiajs/svelte';
     import Plus from '@lucide/svelte/icons/plus';
     import Pencil from '@lucide/svelte/icons/pencil';
@@ -62,7 +63,7 @@
     }
 </script>
 
-<svelte:head><title>Promo</title></svelte:head>
+<PageTitle title="Promo" />
 
 <PageHeader title="Promo" subtitle="Harga promo per produk untuk event atau produk baru">
     {#snippet actions()}

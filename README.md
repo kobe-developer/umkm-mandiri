@@ -96,6 +96,8 @@ resources/js/components/                 Komponen bersama
 - **Promo** (`/admin/promo`, owner): harga promo per produk, berlaku dari 00:00 tanggal mulai sampai 23:59 tanggal berakhir (WIB), untuk kanal yang dipilih. Harga promo wajib lebih kecil dari harga normal; satu produk tidak boleh punya dua promo dengan periode beririsan (apa pun kanalnya). Harga promo dihitung ulang di server; `order_items` menyimpan `original_price` (harga normal) dan `promotion_id`. Di `/menu` ada tab **Promo** (harga normal dicoret), produk promo tetap tampil di kategorinya.
 - **Web push pelanggan**: centang "Kabari saya lewat notifikasi" saat checkout → notifikasi saat Dikonfirmasi, Diproses, Siap/Diantar, Selesai, Dibatalkan, dan pembayaran Lunas. Langganan terikat ke order (tanpa login), maks. 3 perangkat per order, dihapus otomatis 2 hari setelah order final.
 
+- **Branding dinamis**: judul tab ("Halaman · Nama toko"), favicon, ikon PWA, dan ikon notifikasi mengikuti **Toko → Profil toko**. Bila logo diunggah, ikon memakai logo; bila tidak, monogram inisial nama toko (2+ kata → huruf pertama dua kata pertama, mis. *Ayam Penyet Jomblo* → **AP**; 1 kata → huruf pertama + terakhir, mis. *Juciuecy* → **JY**). Ikon digambar server (`BrandIconService`, `/brand/{varian}.png?v=…`) dan di-cache di `storage/app/brand-icons`.
+
 ### Web push: syarat & catatan
 
 - Wajib **HTTPS** (atau `http://localhost`). Kunci `VAPID_*` di `.env` tidak boleh diganti setelah dipakai.

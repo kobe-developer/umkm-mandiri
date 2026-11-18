@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\StoreSetting;
+use App\Services\BrandIconService;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -12,6 +13,8 @@ use Illuminate\Http\JsonResponse;
  */
 class ManifestController extends Controller
 {
+    public function __construct(private readonly BrandIconService $icons) {}
+
     private const THEME_COLOR = '#b93a1a';
 
     private const BACKGROUND_COLOR = '#f6f2ea';
@@ -43,10 +46,10 @@ class ManifestController extends Controller
             'background_color' => self::BACKGROUND_COLOR,
             'theme_color' => self::THEME_COLOR,
             'icons' => [
-                ['src' => '/icons/icon-192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
-                ['src' => '/icons/icon-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
-                ['src' => '/icons/icon-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+                ['src' => $this->icons->url('icon-192'), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => $this->icons->url('icon-512'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => $this->icons->url('icon-512'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
             ],
-        ], 200, ['Content-Type' => 'application/manifest+json', 'Cache-Control' => 'public, max-age=3600'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        ], 200, ['Content-Type' => 'application/manifest+json', 'Cache-Control' => 'no-cache'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 }

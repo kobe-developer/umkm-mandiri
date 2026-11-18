@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { Link, router } from '@inertiajs/svelte';
     import Download from '@lucide/svelte/icons/download';
     import Search from '@lucide/svelte/icons/search';
@@ -43,7 +44,7 @@
     }
 </script>
 
-<svelte:head><title>Semua Transaksi</title></svelte:head>
+<PageTitle title="Semua Transaksi" />
 
 <PageHeader title="Semua Transaksi" subtitle="Dine in, take away & online dalam satu daftar">
     {#snippet actions()}

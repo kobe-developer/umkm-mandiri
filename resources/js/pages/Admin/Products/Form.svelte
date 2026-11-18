@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../../components/PageTitle.svelte';
     import { Link, useForm } from '@inertiajs/svelte';
     import { untrack } from 'svelte';
     import ArrowLeft from '@lucide/svelte/icons/arrow-left';
@@ -58,7 +59,7 @@
     }
 </script>
 
-<svelte:head><title>{isEdit ? 'Ubah' : 'Tambah'} Produk</title></svelte:head>
+<PageTitle title={`${isEdit ? 'Ubah' : 'Tambah'} Produk`} />
 
 <PageHeader title={isEdit ? `Ubah ${product.name}` : 'Tambah Produk'} subtitle={isEdit ? 'Perubahan harga tidak mengubah harga di transaksi lama.' : ''}>
     {#snippet actions()}

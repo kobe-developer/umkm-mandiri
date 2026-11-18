@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { useForm, page } from '@inertiajs/svelte';
     import ProductGrid from '../../components/pos/ProductGrid.svelte';
     import TicketItems from '../../components/pos/TicketItems.svelte';
@@ -104,7 +105,7 @@
     }
 </script>
 
-<svelte:head><title>Kasir</title></svelte:head>
+<PageTitle title="Kasir" />
 
 {#snippet ticket(closeable = false)}
     <div class="space-y-3">

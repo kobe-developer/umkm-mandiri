@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../../components/PageTitle.svelte';
     import { Link, useForm } from '@inertiajs/svelte';
     import Plus from '@lucide/svelte/icons/plus';
     import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
@@ -41,7 +42,7 @@
     }
 </script>
 
-<svelte:head><title>Stok</title></svelte:head>
+<PageTitle title="Stok" />
 
 <PageHeader title="Stok Produk" subtitle="Stok per produk (porsi/pcs). Berkurang otomatis saat order lunas.">
     {#snippet actions()}

@@ -21,7 +21,7 @@
 
 <header class="mx-auto max-w-2xl px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-6">
     <div class="flex items-center justify-between gap-3">
-        <Logo name={settings.name} size={44} />
+        <Logo size={44} />
         <div class="flex items-center gap-2">
             <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold {settings.is_open ? 'border-leaf-100 bg-leaf-50 text-leaf-700' : 'border-line bg-surface text-muted'}">
                 <span class="relative flex size-2">

@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { router, useForm } from '@inertiajs/svelte';
     import Copy from '@lucide/svelte/icons/copy';
     import Check from '@lucide/svelte/icons/check';
@@ -9,8 +10,9 @@
     import Toggle from '../../components/Toggle.svelte';
     import MoneyInput from '../../components/MoneyInput.svelte';
     import OperatingHours from '../../components/admin/OperatingHours.svelte';
+    import StoreLogoField from '../../components/admin/StoreLogoField.svelte';
 
-    let { settings, days = [], withinHours = false, menuUrl } = $props();
+    let { settings, days = [], withinHours = false, menuUrl, brandIcons = {} } = $props();
 
     let toggling = $state(false);
     let copied = $state(false);
@@ -52,7 +54,7 @@
     }
 </script>
 
-<svelte:head><title>Pengaturan Toko</title></svelte:head>
+<PageTitle title="Pengaturan Toko" />
 
 <PageHeader title="Pengaturan Toko" />
 
@@ -101,6 +103,7 @@
 <form class="grid gap-4 lg:grid-cols-2" onsubmit={submit}>
     <section class="card space-y-4 p-4 sm:p-5">
         <h2 class="display text-lg text-ink">Profil toko</h2>
+        <StoreLogoField icons={brandIcons} />
         <div>
             <label class="label" for="s-name">Nama toko</label>
             <input id="s-name" class="input" bind:value={form.store_name} maxlength="100" required />

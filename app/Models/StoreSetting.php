@@ -2,18 +2,44 @@
 
 namespace App\Models;
 
+use App\Services\BrandIconService;
+use App\Support\StoreInitials;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class StoreSetting extends Model
 {
     public const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
     protected $fillable = [
-        'store_name', 'address', 'whatsapp_number', 'delivery_note', 'receipt_note',
+        'store_name', 'logo_path', 'address', 'whatsapp_number', 'delivery_note', 'receipt_note',
         'is_open', 'auto_schedule', 'operating_hours', 'last_schedule_state',
         'online_order_enabled', 'min_order', 'allow_pickup', 'allow_delivery',
         'cashier_can_discount', 'cashier_can_view_revenue',
     ];
+
+    protected $appends = ['logo_url', 'initials'];
+
+    protected static function booted(): void
+    {
+        // Nama/logo berubah → ikon lama (favicon, PWA, notifikasi) dibuat ulang
+        static::saved(function (self $settings) {
+            if ($settings->wasChanged(['store_name', 'logo_path'])) {
+                app(BrandIconService::class)->flush();
+            }
+        });
+    }
+
+    protected function logoUrl(): Attribute
+    {
+        return Attribute::get(fn () => $this->logo_path ? Storage::disk('public')->url($this->logo_path) : null);
+    }
+
+    protected function initials(): Attribute
+    {
+        return Attribute::get(fn () => StoreInitials::from($this->store_name));
+    }
 
     protected function casts(): array
     {

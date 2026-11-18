@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { Link, page } from '@inertiajs/svelte';
     import PageHeader from '../../components/PageHeader.svelte';
     import StatCard from '../../components/StatCard.svelte';
@@ -16,7 +17,7 @@
     const pending = $derived(page.props.pos?.pending_online_count ?? 0);
 </script>
 
-<svelte:head><title>Dashboard Kasir</title></svelte:head>
+<PageTitle title="Dashboard Kasir" />
 
 <PageHeader title="Ringkasan" eyebrow={period.preset === '7d' ? '7 hari terakhir' : 'Hari ini'}>
     {#snippet actions()}

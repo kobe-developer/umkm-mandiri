@@ -7,7 +7,8 @@ import { registerServiceWorker } from './lib/push.js';
 const STANDALONE = [/^Menu\//, /^Auth\//, /^Error$/, /\/Receipt$/];
 
 createInertiaApp({
-    title: (title) => (title ? `${title} · UMKM Mandiri` : 'UMKM Mandiri'),
+    // Judul lengkap ("{halaman} · {nama toko}") disusun oleh components/PageTitle.svelte
+    title: (title) => title,
     resolve: (name) => {
         const pages = import.meta.glob('./pages/**/*.svelte');
         const page = pages[`./pages/${name}.svelte`];

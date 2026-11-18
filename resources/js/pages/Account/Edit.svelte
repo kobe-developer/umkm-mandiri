@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { useForm, page } from '@inertiajs/svelte';
     import Lock from '@lucide/svelte/icons/lock';
     import ShieldCheck from '@lucide/svelte/icons/shield-check';
@@ -23,7 +24,7 @@
     }
 </script>
 
-<svelte:head><title>Akun Saya</title></svelte:head>
+<PageTitle title="Akun Saya" />
 
 <PageHeader title="Akun Saya" subtitle={`${page.props.auth.user?.name} · ${page.props.auth.user?.username}`} />
 

@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { Link } from '@inertiajs/svelte';
     import TriangleAlert from '@lucide/svelte/icons/triangle-exclamation-point';
     import ArrowRight from '@lucide/svelte/icons/arrow-right';
@@ -24,7 +25,7 @@
     const busyHours = $derived(hourly.filter((h) => h.hour >= 6 || h.transactions > 0));
 </script>
 
-<svelte:head><title>Laporan & Tren</title></svelte:head>
+<PageTitle title="Laporan & Tren" />
 
 <PageHeader eyebrow={periodLabel} title="Laporan & Tren Penjualan" subtitle="Omzet dihitung dari order Selesai + Lunas" />
 

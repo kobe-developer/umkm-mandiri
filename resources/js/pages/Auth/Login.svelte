@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { useForm, page } from '@inertiajs/svelte';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import Logo from '../../components/Logo.svelte';
@@ -11,12 +12,12 @@
     }
 </script>
 
-<svelte:head><title>Masuk · UMKM Mandiri</title></svelte:head>
+<PageTitle title="Masuk" />
 
 <div class="flex min-h-dvh flex-col bg-paper px-5 pt-[max(2rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
     <div class="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
         <div class="mb-10">
-            <Logo name={page.props.store?.name} size={52} />
+            <Logo size={52} />
             <h1 class="display mt-6 text-[2.25rem] leading-[1.1] text-ink">Selamat datang kembali.</h1>
             <p class="mt-2 text-[15px] text-muted">Masuk ke {page.props.store?.name ?? 'UMKM Mandiri'} sebagai owner atau kasir.</p>
         </div>

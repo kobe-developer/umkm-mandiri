@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../../components/PageTitle.svelte';
     import { Link } from '@inertiajs/svelte';
     import ChevronLeft from '@lucide/svelte/icons/chevron-left';
     import Printer from '@lucide/svelte/icons/printer';
@@ -8,7 +9,7 @@
     let { order, store } = $props();
 </script>
 
-<svelte:head><title>Struk {order.order_number}</title></svelte:head>
+<PageTitle title={`Struk ${order.order_number}`} />
 
 <div class="min-h-dvh bg-paper-deep py-6 print:bg-white print:py-0">
     <div class="no-print mx-auto mb-5 flex max-w-[80mm] gap-2 px-2">

@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { router } from '@inertiajs/svelte';
     import PageHeader from '../../components/PageHeader.svelte';
     import Toggle from '../../components/Toggle.svelte';
@@ -29,7 +30,7 @@
     }
 </script>
 
-<svelte:head><title>Ketersediaan Produk</title></svelte:head>
+<PageTitle title="Ketersediaan Produk" />
 
 <PageHeader title="Ketersediaan" subtitle="Tandai habis atau tersedia — langsung berlaku di menu online." />
 

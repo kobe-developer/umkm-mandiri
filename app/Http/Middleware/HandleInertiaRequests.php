@@ -6,6 +6,7 @@ use App\Enums\OrderChannel;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\StoreSetting;
+use App\Services\BrandIconService;
 use App\Services\OrderPushNotifier;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -50,6 +51,9 @@ class HandleInertiaRequests extends Middleware
 
         return [
             'name' => $settings->store_name,
+            'initials' => $settings->initials,
+            'logo_url' => $settings->logo_url,
+            'favicon_url' => app(BrandIconService::class)->url('favicon', $settings),
             'is_open' => $settings->is_open,
             'whatsapp_number' => $authenticated ? $settings->whatsapp_number : null,
         ];

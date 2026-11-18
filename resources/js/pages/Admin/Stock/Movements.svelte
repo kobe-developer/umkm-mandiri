@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../../components/PageTitle.svelte';
     import { Link, router } from '@inertiajs/svelte';
     import { untrack } from 'svelte';
     import ArrowLeft from '@lucide/svelte/icons/arrow-left';
@@ -32,7 +33,7 @@
     }
 </script>
 
-<svelte:head><title>Riwayat Stok</title></svelte:head>
+<PageTitle title="Riwayat Stok" />
 
 <PageHeader title="Riwayat Pergerakan Stok">
     {#snippet actions()}

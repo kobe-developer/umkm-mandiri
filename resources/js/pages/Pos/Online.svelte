@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { Link, page } from '@inertiajs/svelte';
     import PageHeader from '../../components/PageHeader.svelte';
     import Pagination from '../../components/Pagination.svelte';
@@ -10,7 +11,7 @@
     let { orders, status, statuses, counts } = $props();
 </script>
 
-<svelte:head><title>{counts.baru ? `(${counts.baru}) ` : ''}Order Online</title></svelte:head>
+<PageTitle title={`${counts.baru ? `(${counts.baru}) ` : ''}Order Online`} />
 
 <PageHeader title="Order Online" subtitle="Konfirmasi order baru, lalu proses sampai selesai. Diperbarui otomatis." />
 

@@ -1,4 +1,5 @@
 <script>
+    import PageTitle from '../../components/PageTitle.svelte';
     import { router } from '@inertiajs/svelte';
     import { untrack } from 'svelte';
     import ChevronDown from '@lucide/svelte/icons/chevron-down';
@@ -38,7 +39,7 @@
     }
 </script>
 
-<svelte:head><title>Log Aktivitas</title></svelte:head>
+<PageTitle title="Log Aktivitas" />
 
 <PageHeader title="Log Aktivitas" subtitle="Siapa mengubah apa dan kapan" />
 
