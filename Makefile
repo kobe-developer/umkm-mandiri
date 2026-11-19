@@ -21,7 +21,7 @@ help: ## Tampilkan daftar perintah
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
 
-deploy: pull build db-up backup migrate up optimize status check-env ## Update penuh: pull, build, migrasi, restart
+deploy: pull build db-up backup migrate up optimize prune status check-env ## Update penuh: pull, build, migrasi, restart, bersihkan image lama
 	@echo "Deploy selesai"
 
 check-env: ## Peringatkan bila kunci VAPID di .env kosong (web push nonaktif)
@@ -106,5 +106,10 @@ rollback: ## Batalkan batch migrasi terakhir
 down: ## Hentikan semua container (data volume tetap aman)
 	$(DC) down
 
-prune: ## Hapus image lama yang tidak terpakai
+# Cache build yang dipakai build terakhir (termasuk layer ekstensi PHP yang lama
+# dikompilasi) tetap disimpan: filter `until` melihat kapan cache terakhir dipakai.
+# Jangan pakai `docker builder prune -a` / `docker system prune -a`: layer itu ikut terhapus
+# dan build berikutnya mengompilasi ulang semua ekstensi (beberapa menit).
+prune: ## Hapus image lama tanpa tag dan cache build yang tidak dipakai >24 jam
 	docker image prune -f
+	docker builder prune -f --filter until=24h
