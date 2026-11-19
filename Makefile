@@ -89,7 +89,7 @@ optimize: ## Cache config, route, view, event di setiap container PHP
 	done
 
 status: ## Lihat status container
-	$(DC) ps
+	$(DC) ps --format "table {{.Service}}\t{{.RunningFor}}\t{{.Status}}"
 
 logs: ## Ikuti log (contoh: make logs s=queue)
 	$(DC) logs -f --tail=100 $(s)
