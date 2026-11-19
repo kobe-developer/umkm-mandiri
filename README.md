@@ -52,6 +52,21 @@ Password awal bisa diatur lewat `SEED_OWNER_PASSWORD`, `SEED_CASHIER_PASSWORD`, 
 
 Production: `APP_BUILD_TARGET=prod docker compose build` membuat image berisi kode + `vendor` + aset ter-build (`public/build`). Set `APP_ENV=production`, `APP_DEBUG=false`, HTTPS di depan nginx, dan `TRUSTED_PROXIES` ke IP proxy sebenarnya. `VITE_REVERB_*` boleh dikosongkan (WebSocket ikut origin halaman lewat proxy `/app`).
 
+### CI & deploy otomatis (GitHub Actions)
+
+`.github/workflows/ci.yml` menjalankan Pint, build Vite, dan `php artisan test` (PHP 8.5 + MySQL 8.4 WIB) di setiap PR dan push ke `main`. Setelah test lolos, push ke `main` men-deploy lewat SSH (`make deploy` di server). Bila `main` sudah maju ke commit lain saat giliran deploy tiba, deploy dilewati; commit terbaru di-deploy oleh run-nya sendiri.
+
+Deploy nonaktif sampai disiapkan:
+
+1. Di server, buat key khusus deploy: `ssh-keygen -t ed25519 -f ~/.ssh/gha_deploy -N ""`, tambahkan `gha_deploy.pub` ke `~/.ssh/authorized_keys` user yang menjalankan `make deploy` (user itu harus bisa `git pull` dan menjalankan `docker`).
+2. GitHub → Settings → Environments → buat `production` (opsional: *Required reviewers* agar deploy menunggu persetujuan), lalu isi secret:
+   - `SSH_HOST`, `SSH_USER`, `SSH_PORT` (opsional, default 22), `DEPLOY_PATH` (folder repo di server)
+   - `SSH_PRIVATE_KEY` — isi `~/.ssh/gha_deploy`
+   - `SSH_KNOWN_HOSTS` — hasil `ssh-keyscan -p <port> <host>` (dijalankan dari mesin tepercaya)
+3. Settings → Secrets and variables → Actions → *Variables*: `DEPLOY_ENABLED` = `true`.
+
+Agar commit yang gagal test tidak bisa masuk `main`, aktifkan branch protection di `main` dengan status check **Test** wajib lolos.
+
 Akses via tunnel HTTPS (mis. `ngrok http 8080`): cukup `TRUSTED_PROXIES` berisi jaringan Docker (default `.env.example`) agar Laravel membaca `X-Forwarded-Proto` dan aset/URL memakai `https://`. Backup ada di `storage/app/backups` — salin ke penyimpanan di luar VPS.
 
 ## Testing

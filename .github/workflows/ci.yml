@@ -1,0 +1,150 @@
+name: CI & Deploy
+
+# Test berjalan di setiap PR ke main dan setiap push ke main.
+# Deploy ke server hanya setelah test lolos, hanya dari push ke main,
+# dan hanya bila variabel repo DEPLOY_ENABLED = true (lihat README).
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: umkm_mandiri
+      DB_PASSWORD: secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # MySQL dijalankan manual (bukan `services:`) agar argumen server sama dengan
+      # compose.yaml, terutama --default-time-zone=+07:00 (WIB).
+      - name: Start MySQL 8.4
+        run: |
+          docker run -d --name mysql -p 3306:3306 \
+            -e MYSQL_ROOT_PASSWORD=rootsecret \
+            -e MYSQL_DATABASE=umkm_mandiri_testing \
+            -e MYSQL_USER="$DB_USERNAME" \
+            -e MYSQL_PASSWORD="$DB_PASSWORD" \
+            -e TZ=Asia/Jakarta \
+            mysql:8.4 \
+            --mysqlx=OFF --default-time-zone=+07:00 --performance-schema=OFF
+
+      - name: Setup PHP 8.5
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: gd, pdo_mysql, zip, bcmath, intl, pcntl, exif
+          ini-values: date.timezone=Asia/Jakarta, memory_limit=512M
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependency PHP
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Halaman Inertia memanggil @vite, jadi test butuh public/build/manifest.json.
+      # Sekaligus memastikan bundle frontend bisa di-build.
+      - name: Build aset
+        run: |
+          npm ci
+          npm run build
+
+      - name: Siapkan .env
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+
+      - name: Pint
+        run: vendor/bin/pint --test
+
+      - name: Tunggu MySQL siap
+        run: |
+          for _ in $(seq 1 60); do
+            if docker exec mysql mysqladmin ping -h 127.0.0.1 -uroot -prootsecret --silent 2>/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs mysql
+          exit 1
+
+      - name: Test
+        run: php artisan test
+
+  deploy:
+    name: Deploy
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+
+    steps:
+      - name: Siapkan SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$SSH_PRIVATE_KEY" ] || [ -z "$SSH_KNOWN_HOSTS" ]; then
+            echo "::error::Secret SSH_PRIVATE_KEY / SSH_KNOWN_HOSTS belum diisi di environment production"
+            exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_deploy ~/.ssh/known_hosts
+
+      # Bila main sudah maju ke commit lain saat job ini menunggu, lewati deploy:
+      # commit yang lebih baru akan di-deploy oleh run-nya sendiri setelah test-nya lolos,
+      # sehingga commit yang belum dites tidak ikut ter-pull oleh `make deploy`.
+      - name: make deploy di server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SHA: ${{ github.sha }}
+        run: |
+          ssh -i ~/.ssh/id_deploy -p "$SSH_PORT" -o BatchMode=yes "$SSH_USER@$SSH_HOST" \
+            bash -s -- "$DEPLOY_PATH" "$SHA" <<'REMOTE'
+          set -euo pipefail
+          cd "$1"
+          git fetch --quiet origin main
+          latest=$(git rev-parse origin/main)
+          if [ "$latest" != "$2" ]; then
+            echo "main sudah di $latest (bukan $2); deploy dilewati, run berikutnya yang men-deploy."
+            exit 0
+          fi
+          make deploy
+          REMOTE
