@@ -52,6 +52,8 @@ Password awal bisa diatur lewat `SEED_OWNER_PASSWORD`, `SEED_CASHIER_PASSWORD`, 
 
 Production: `APP_BUILD_TARGET=prod docker compose build` membuat image berisi kode + `vendor` + aset ter-build (`public/build`). Set `APP_ENV=production`, `APP_DEBUG=false`, HTTPS di depan nginx, dan `TRUSTED_PROXIES` ke IP proxy sebenarnya. `VITE_REVERB_*` boleh dikosongkan (WebSocket ikut origin halaman lewat proxy `/app`).
 
+Web push di production: `.env` di-mount read-only ke container, jadi `webpush:vapid` tidak bisa menulisnya. Jalankan `make vapid-keys`, salin dua baris `VAPID_*` ke `.env` (kunci khusus prod, jangan pakai kunci dev), lalu `make reload-env`. `make deploy` (dan `make check-env`) memperingatkan bila kunci ini masih kosong.
+
 ### CI & deploy otomatis (GitHub Actions)
 
 `.github/workflows/ci.yml` menjalankan Pint, build Vite, dan `php artisan test` (PHP 8.5 + MySQL 8.4 WIB) di setiap PR dan push ke `main`. Setelah test lolos, push ke `main` men-deploy lewat SSH (`make deploy` di server). Bila `main` sudah maju ke commit lain saat giliran deploy tiba, deploy dilewati; commit terbaru di-deploy oleh run-nya sendiri.

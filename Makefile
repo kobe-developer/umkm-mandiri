@@ -10,17 +10,42 @@ BRANCH       ?= main
 BACKUP_DIR   := storage/app/backups
 KEEP         ?= 10
 APP_RUN      := $(DC) run --rm --no-deps -T app
+VAPID_KEYS   := VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY
 
 .DEFAULT_GOAL := help
 .PHONY: help deploy pull build db-up migrate up optimize status logs shell \
-        migrate-status rollback down prune backup backups restore
+        migrate-status rollback down prune backup backups restore \
+        check-env vapid-keys reload-env
 
 help: ## Tampilkan daftar perintah
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
 
-deploy: pull build db-up backup migrate up optimize status ## Update penuh: pull, build, migrasi, restart
+deploy: pull build db-up backup migrate up optimize status check-env ## Update penuh: pull, build, migrasi, restart
 	@echo "Deploy selesai"
+
+check-env: ## Peringatkan bila kunci VAPID di .env kosong (web push nonaktif)
+	@test -f .env || { echo "⚠  .env tidak ditemukan"; exit 0; }; \
+	missing=; \
+	for k in $(VAPID_KEYS); do \
+		v=$$(sed -n "s/^$$k=//p" .env | tail -n 1 | tr -d "\"' \r"); \
+		[ -n "$$v" ] || missing="$$missing $$k"; \
+	done; \
+	if [ -n "$$missing" ]; then \
+		echo ""; \
+		echo "⚠  PERINGATAN: kosong di .env:$$missing"; \
+		echo "   Web push nonaktif (notifikasi order ke staf & status pesanan ke pelanggan)."; \
+		echo "   1. make vapid-keys  → salin hasilnya ke .env (sekali saja, jangan diganti setelah dipakai)"; \
+		echo "   2. make reload-env  → muat ulang .env di container PHP"; \
+		echo ""; \
+	fi
+
+vapid-keys: ## Buat kunci VAPID baru (hanya ditampilkan, salin manual ke .env)
+	$(DC) exec -T app php artisan webpush:vapid --show
+
+reload-env: ## Muat ulang .env: buat ulang container PHP lalu cache ulang config
+	$(DC) up -d --force-recreate $(PHP_SERVICES)
+	@$(MAKE) --no-print-directory optimize
 
 pull: ## Ambil kode terbaru dari git
 	git pull --ff-only origin $(BRANCH)
